@@ -1,19 +1,32 @@
 Installation
-############
+============
 
-Install OpenStudio and PAT
-==========================
+Download ResStock
+-----------------
 
-Download the latest stable software version of OpenStudio (2.8.0) from the `OpenStudio developer website <https://www.openstudio.net/developers>`_.
-This is necessary because the latest critical changes to run ResStock projects are only available in the latest version.
-Do a default install including Parametric Analysis Tool (PAT). 
+There are two options for downloading `ResStock <https://github.com/NREL/resstock>`_:
 
-Open the Parametric Analysis Tool (PAT). You may be asked if you would like to allow openstudio to allow connections. Select "Allow".
+1. download a released version
+2. clone the repository
 
-.. image:: ../images/tutorial/allow_connections.png
+For the first option, go to the `releases page <https://github.com/NREL/resstock/releases>`_ on GitHub and select a release. Note the OpenStudio version requirements associated with each version of ResStock. For example, ResStock v2.4.0 requires that you have OpenStudio v2.9.0 installed.
 
-Download the ResStock repository
-================================
+For the second option, you will need to have `Git <https://git-scm.com>`_ or some other Git-based tool installed. Cloning the ResStock repository gives you access to the ``develop`` branch of ResStock. The ``develop`` branch is under active development.
 
-Go to the `repository page on GitHub <https://github.com/NREL/OpenStudio-BuildStock>`_ and either ``git clone`` or download a zip of the repository. Make sure that you have checked out the `master` branch of the repository.
+.. note::
 
+  If you are planning to perform large-scale runs on ResStock (greater than 1000 simulations) or analyze timeseries data, you will need to use :ref:`buildstockbatch <buildstockbatch>` to run and manage batch simulations of ResStock.
+  Buildstockbatch can be run locally via Docker, on AWS, or on an HPC like NREL’s Eagle.
+  Installation instructions can be found in buildstockbatch’s `installation documentation <https://buildstockbatch.readthedocs.io/en/latest/installation.html>`_.
+
+  If you are planning to perform small-scale runs of ResStock (1000 simulations or fewer), you can use the Docker-less option of running locally via :ref:`run_analysis.rb <run_analysis>`.
+
+Install OpenStudio
+------------------
+
+Download the version of OpenStudio software (corresponding to the ResStock version that has been selected) from the `OpenStudio developer website <https://www.openstudio.net/developers>`_.
+
+Developer instructions
+----------------------
+
+If you will be developing residential measures and testing residential building models, see the :ref:`advanced_tutorial`. If you are a developer, make sure that you have checked out the ``develop`` branch of the repository.

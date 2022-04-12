@@ -1,71 +1,57 @@
-Run the Project on Amazon Web Services
-======================================
+Run the Project
+===============
 
-Switch to the Run tab. The selection will initially be on "Run Locally" with an error message stating that you cannot run algorithmic analyses locally. Select "Run on Cloud" and change **Remote Server Type** to "Amazon Cloud" to set up your run environment.
+.. _buildstockbatch:
 
-AWS Credentials
----------------
+Run using buildstockbatch
+-------------------------
 
-First, you will need some AWS credentials to allow PAT to start compute instances in the cloud. Go to https://aws.amazon.com and click the button to create an AWS Account and `add a payment method`_ for billing. You will also need to `create access keys`_ for your AWS account. When you have your AWS Access and Secret keys, click on the **New** button in the **AWS Credentials** box in PAT and enter your keys. Also, make sure to enter *your* **AWS UserID** on the main run screen. 
+See the `BuildStock Batch documentation <https://buildstockbatch.readthedocs.io/en/latest/>`_ for information on running projects (large-scale).
 
-.. _add a payment method: http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/edit-payment-method.html
-.. _create access keys: http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html
+.. _run_analysis:
 
-Cluster Settings and Starting the Cluster
------------------------------------------
+Run using run_analysis.rb
+-------------------------
 
-Ensure that your project's AMI selection matches "2.8.0" (this should also be the version of OpenStudio/PAT that you are using). We will leave most of the rest of the settings at their defaults, but because we're doing a small analysis here, we're going to set the number of worker nodes to zero. For guidance on cluster settings for your analysis including instance selection and worker nodes see :doc:`../aws_cluster_config`.
+You also have the option of running (small-scale) projects using the OpenStudio `Command Line Interface <http://nrel.github.io/OpenStudio-user-documentation/reference/command_line_interface/>`_ (CLI) with buildstockbatch yml input files.
+This method needs only the OpenStudio CLI.
 
-.. image:: ../images/tutorial/run_on_cloud.png
+The primary differences relative to buildstockbatch are:
 
-Click **Save Cluster Settings** and the **Start** button next to the **Cluster Status** label. Wait for the cluster to start. The cloud icon will turn green when it is ready. It can take up to 10 minutes.
+#. ``Debugging``: Individual, or sets of (e.g., 1, 2, 4), building ID(s) from the entire sampled space can be run. (See the related ``--building_id`` argument below.)
+#. ``Convenience``: Simulation input files (both OSW and HPXML) are collected and stored on-the-fly. (See the related ``--debug`` argument below.)
+#. ``Size``: Folders containing intermediate files can be either preserved or successively overwritten. (See the related ``--keep_run_folders`` argument below.)
+#. ``Accessibility``: Simulation input and output files are organized and stored differently, and are not tarred or compressed.
 
-Run Analysis and Monitor Status
--------------------------------
+Call the OpenStudio CLI with the provided ``workflow/run_analysis.rb`` script.
+For example:
+``openstudio workflow/run_analysis.rb -y project_testing/testing_baseline.yml``
+The previous command samples from ``project_testing`` and runs simulations using baseline workflows generated from the specified yml file.
+An "output directory" (as specified in the yml file) is created with all input (OSW and HPXML) files and simulation results.
 
-When the cluster is running, start the analysis by clicking the **Run Entire Workflow** button below the server settings. You will see a status bar and messages. Once it says "Analysis Started" you can click the **View Server** button to see the status of your analysis on the OpenStudio Server.
-
-.. image:: ../images/tutorial/os_server_status.png
-
-Leave the PAT application open while your analysis runs. It could take a while.
-
-.. _download-results:
-
-Download results
-----------------
-
-Eventually PAT will show in the status bar "Analysis completed". And the OpenStudio Server console will show the same.  
-
-.. image:: ../images/tutorial/os_server_complete.png
-
-.. image:: ../images/tutorial/pat_complete.png
-
-Clicking the **View Results** button in PAT will open the results.csv file for your analysis. It contains a row for every sampled building including all options selected for that building and annual energy simulation results. Often this is the only results you will need. That file is saved in your project in ``localResults/results.csv``. 
-
-Sometimes you will need *all* the simulation results including timeseries results if you requested them. Clicking the **Results (cloud, down arrow)** button will pull down all of the simulation results from the server and save them to your project. Each result datapoint will be stored in a ``localResults/[GUID]`` folder in your project. 
-
-.. warning::
-   
-   Downloading all simulation results can be a lot of data. Make sure you're on a good connection and have enough room on your local machine. Be prepared for the download to take a while. 
-
-.. _download:
-   
 .. note::
 
-   To download all datapoints, including the timeseries csv output for each simulation, run the ``scripts/download_datapoints.rb`` script using the OpenStudio CLI. The script requires that the :ref:`timeseries-csv-export` reporting measure be included in your PAT project. Supply all required arguments to the script, including project directory, server DNS, and analysis ID. A usage example is given as follows:
-   ``$ /c/openstudio-2.8.0/bin/openstudio.exe scripts/download_datapoints.rb -p project_resstock_national``
-   ``-s http://ec2-107-23-165-146.compute-1.amazonaws.com -a 706c3b4a-9685-4924-bb13-c6bec77aa397``
-   Additionally, the script has an optional argument to unzip each datapoint zip file on the fly.
+  If the ``openstudio`` command is not found, it's because the executable is not in your PATH. Either add the executable to your PATH or point directly to the executable found in the openstudio-X.X.X/bin directory.
 
-Shutting Down the OpenStudio Server Cluster
--------------------------------------------
+You can also request that only measures are applied (i.e., no simulations are run) using the ``--measures_only`` flag.
+For example:
+``openstudio workflow/run_analysis.rb -y project_testing/testing_baseline.yml -m``
 
-Once you have retrieved all the data you need from your analysis, it is a good idea to shut down the OpenStudio Server Cluster to stop incurring AWS costs. The most straightforward way to do that is to click the **Terminate** button on the Run tab of PAT.
+Run ``openstudio workflow/run_analysis.rb -h`` to see all available commands/arguments:
 
-.. image:: ../images/tutorial/pat_terminate.png
+.. code:: bash
 
-The PAT interface will indicate that the cluster has been shut down after a moment. Just to be sure, it's best to open the AWS cloud console either by clicking the **View AWS Console** button in PAT or visiting https://console.aws.amazon.com. Select "Services" > "EC2". Select "N. Virginia" in the region menu (upper right). You should see a terminated instance of OpenStudio-Server and potentially some workers if you chose to use workers above. 
+  $ openstudio workflow/run_analysis.rb -h
+  Usage: run_analysis.rb -y buildstockbatch.yml
+   e.g., run_analysis.rb -y national_baseline.yml
+      -y, --yml <FILE>                 YML file
+      -n, --threads N                  Number of parallel simulations (defaults to processor count)
+      -m, --measures_only              Only run the OpenStudio and EnergyPlus measures
+      -d, --debug                      Save both existing and upgraded xml/osw files
+      -i, --building_id ID             Only run this building ID; can be called multiple times
+      -k, --keep_run_folders           Preserve run folder for all datapoints
+      -h, --help                       Display help
+      -v, --version                    Display version
 
-.. image:: ../images/tutorial/aws_console_terminated.png
-
-If it has been long enough the list will be empty. If for some reason the instances are still running, you can terminate them by right-clicking and selecting "Terminate". If PAT has been closed or crashed, this is how you will have to shut down the cluster. 
+.. note::
+  At this time the ``residential_quota_downselect`` sampler with ``resample`` is not supported.

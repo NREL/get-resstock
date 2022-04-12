@@ -1,77 +1,26 @@
-OpenStudio-BuildStock
-===================
+<img src="https://user-images.githubusercontent.com/1276021/85608250-1ff46b80-b612-11ea-903e-4ced367e5940.jpg" width="280">
 
-BuildStock, built on the [OpenStudio platform](http://openstudio.net), is a project geared at modeling the existing building stock for, e.g., national, regional, or local analysis, using the [EnergyPlus simulation engine](http://energyplus.net). It consists of ResStock and ComStock, sister tools for modeling the residential and commercial building stock, respectively. 
+The `develop` branch is under active development. Find the latest release [here](https://github.com/NREL/resstock/releases).
 
-This project is a <b>work-in-progress</b>.
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/NREL/resstock?include_prereleases)](https://github.com/NREL/resstock/releases)
+[![ci](https://github.com/NREL/resstock/workflows/ci/badge.svg)](https://github.com/NREL/resstock/actions)
+[![Documentation Status](https://readthedocs.org/projects/resstock/badge/?version=latest)](https://resstock.readthedocs.io/en/latest/?badge=latest)
 
-Unit Test Status: [![CircleCI](https://circleci.com/gh/NREL/OpenStudio-BuildStock/tree/master.svg?style=svg)](https://circleci.com/gh/NREL/OpenStudio-BuildStock/tree/master)
+[ResStock™](https://www.nrel.gov/buildings/resstock.html), built on the [OpenStudio platform](http://openstudio.net), is a project geared at modeling existing residential building stocks at national, regional, or local scales with a high-degree of granularity (e.g., one physics-based simulation model for every 200 dwelling units), using the [EnergyPlus simulation engine](http://energyplus.net). Information about ComStock™, a sister tool for modeling the commercial building stock, can be found [here](https://www.nrel.gov/buildings/comstock.html). 
 
-Code Coverage: [![codecov](https://codecov.io/gh/NREL/OpenStudio-BuildStock/branch/master/graph/badge.svg)](https://codecov.io/gh/NREL/OpenStudio-BuildStock)
+This repository contains:
 
-For more information, please visit the [documentation](http://resstock.readthedocs.io/en/latest/).
+- [Housing characteristics of the U.S. residential building stock](https://github.com/NREL/resstock/tree/main/project_national/housing_characteristics), in the form of conditional probability distributions stored as tab-separated value (.tsv) files. A visualization of the dependency structure can be found [here](https://htmlpreview.github.io/?https://github.com/NREL/resstock/blob/main/project_national/util/dependency_wheel/dep_wheel.html)
+- [A library of housing characteristic "options"](https://github.com/NREL/resstock/blob/main/resources/options_lookup.tsv) that translate high-level characteristic parameters into arguments for OpenStudio measures, and which are referenced by the housing characteristic .tsv files and building energy upgrades defined in project definition files
+- Project definition files:
+  - v2.3.0 and later: [buildstockbatch YML files openable in any text editor](https://github.com/NREL/resstock/blob/main/project_national/national_baseline.yml)
+  - v2.2.5 and prior: [Project folder openable in PAT](https://github.com/NREL/resstock/tree/v2.2.5/project_singlefamilydetached)
+- Unit-level OpenStudio Measures for automatically constructing OpenStudio Models of each representative dwelling unit model:
+  - v2.6.0 and later: [OpenStudio-HPXML Measures](https://github.com/NREL/resstock/tree/main/resources/hpxml-measures)
+  - v2.5.0 and prior: [OpenStudio Measures](https://github.com/NREL/resstock/tree/main/resources/measures)
+- [Higher-level OpenStudio Measures](https://github.com/NREL/resstock/tree/main/measures) for controlling simulation inputs and outputs
 
-![BuildStock workflow](https://user-images.githubusercontent.com/5861765/32569254-da2895c8-c47d-11e7-93cb-05fb4c8806d7.png)
+This repository does not contain software for running ResStock simulations, which can be found as follows:
 
-## ResStock for Multifamily Low-Rise
-
-A [release](https://github.com/NREL/OpenStudio-BuildStock/releases/tag/v2.0.0) of ResStock with Multifamily Low-Rise capabilities is now available!
-
-This dependency graph illustrates the relationship between the conditional probability distributions used to describe the U.S. residential building stock. Blue color indicates the parameters and dependencies added to represent for the low-rise multifamily sector.
-![image](https://user-images.githubusercontent.com/1276021/40512741-fa539b58-5f60-11e8-8423-36efd677b81d.png)
-
-## Running the Measures
-
-The measures can be run via the standard OpenStudio approaches: the user interfaces ([OpenStudio Application](http://nrel.github.io/OpenStudio-user-documentation/reference/openstudio_application_interface/) and [Parametric Analysis Tool](http://nrel.github.io/OpenStudio-user-documentation/reference/parametric_analysis_tool_2/)), the [Command Line Interface](http://nrel.github.io/OpenStudio-user-documentation/reference/command_line_interface/), or via the [OpenStudio SDK](https://openstudio-sdk-documentation.s3.amazonaws.com/index.html).
-
-If interested in programatically driving the simulations, you will likely find it easiest to use the Command Line Interface approach. The Command Line Interface is a self-contained executable that can run an OpenStudio Workflow file, which defines a series of OpenStudio measures to apply.
-
-An example OpenStudio Workflow [(example_single_family_detached.osw)](https://github.com/NREL/OpenStudio-BuildStock/blob/master/workflows/example_single_family_detached.osw) is provided with a pre-populated selection of residential measures and arguments. It can be modified as needed and then run like so:
-
-`openstudio.exe run -w example_single_family_detached.osw`
-
-This will apply the measures, run the EnergyPlus simulation, and produce output. 
-
-### Measure Order
-
-The order in which these measures are called is important. For example, the Window Constructions measure must be called after windows have been added to the building. The table below documents the intended order of using these measures, and was automatically generated from a [JSON file](https://github.com/NREL/OpenStudio-BuildStock/blob/master/workflows/measure-info.json).
-
-<nowiki>*</nowiki> Note: Nearly every measure is dependent on having the geometry defined first so this is not included in the table for readability purposes.
-
-<!--- The below table is automated via a rake task -->
-<!--- MEASURE_WORKFLOW_START -->
-|Group|Measure|Dependencies*|
-|:---|:---|:---|
-|1. Simulation Controls|1. Simulation Controls||
-|2. Location|1. Location||
-|3. Geometry|1. Geometry - Create Single-Family Detached (or Single-Family Attached or Multifamily)||
-||2. Door Area||
-||3. Window/Skylight Area||
-|4. Envelope Constructions|1. Unfinished Attic (or Finished Roof)||
-||2. Wood Stud Walls (or Double Stud, CMU, SIP, etc.)||
-||3. Slab (or Finished Basement, Unfinished Basement, Crawlspace, Pier & Beam)||
-||4. Floors||
-||5. Windows/Skylights|Window/Skylight Area, Location|
-||6. Doors|Door Area|
-||7. Shared Building Facades||
-|5. Domestic Hot Water|1. Water Heater - Tank (or Tankless, Heat Pump, etc.)||
-||2. Hot Water Fixtures|Water Heater|
-||3. Hot Water Distribution|Hot Water Fixtures, Location|
-||4. Solar Hot Water|Water Heater, Location|
-|6. HVAC|1. Central Air Source Heat Pump (or AC/Furnace, Boiler, MSHP, etc.)||
-||2. Heating Setpoint|HVAC Equipment, Location|
-||3. Cooling Setpoint|HVAC Equipment, Location|
-||4. Ceiling Fan|Cooling Setpoint|
-||5. Dehumidifier|HVAC Equipment|
-|7. Major Appliances|1. Refrigerator||
-||2. Clothes Washer|Water Heater, Location|
-||3. Clothes Dryer|Clothes Washer|
-||4. Dishwasher|Water Heater, Location|
-||5. Cooking Range||
-|8. Lighting|1. Lighting|Location|
-|9. Misc Loads|1. Plug Loads||
-||2. Large, Uncommon Loads||
-|10. Airflow|1. Airflow|Location, HVAC Equipment, Clothes Dryer|
-|11. Sizing|1. HVAC Sizing|(lots of measures...)|
-|12. Photovoltaics|1. Photovoltaics||
-<!--- MEASURE_WORKFLOW_END -->
+ - [Versions 2.3.0](https://github.com/NREL/resstock/releases/tag/v2.3.0) and later only support the use of [buildstockbatch](https://github.com/NREL/buildstockbatch) for deploying simulations on high-performance or cloud computing. Version 2.3.0 also removed separate projects for single-family detached and multifamily buildings, in lieu of a combined `project_national` representing the U.S. residential building stock. See the [changelog](https://github.com/NREL/resstock/blob/main/CHANGELOG.md) for more details. 
+ - [Versions 2.2.5](https://github.com/NREL/resstock/releases/tag/v2.2.5) and prior support the use of the publicly available [OpenStudio-PAT](https://github.com/NREL/OpenStudio-PAT) software as an interface for deploying simulations on cloud computing. Read the [documentation for v2.2.5](https://resstock.readthedocs.io/en/v2.2.5/).
