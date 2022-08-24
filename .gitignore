@@ -11,3 +11,4 @@
 .vscode/
 .DS_Store
 **/.ipynb_checkpoints/*
+/california_baseline/buildstock.csv
