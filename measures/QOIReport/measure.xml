@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>qoi_report</name>
   <uid>be0bfc7f-25c6-435a-9acd-2f5fa8ac817d</uid>
-  <version_id>502c8bd6-8c70-4627-8d64-cde337096ea2</version_id>
-  <version_modified>20220404T201119Z</version_modified>
+  <version_id>f74b5199-72a0-4d3e-a3a9-49ac2640fb99</version_id>
+  <version_modified>20220610T181704Z</version_modified>
   <xml_checksum>15BF4E57</xml_checksum>
   <class_name>QOIReport</class_name>
   <display_name>QOI Report</display_name>
@@ -137,6 +137,12 @@
       <checksum>4A01E6CA</checksum>
     </file>
     <file>
+      <filename>qoi_report_test.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>test</usage_type>
+      <checksum>FDE812FB</checksum>
+    </file>
+    <file>
       <version>
         <software_program>OpenStudio</software_program>
         <identifier>2.9.0</identifier>
@@ -145,13 +151,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>DD120433</checksum>
-    </file>
-    <file>
-      <filename>qoi_report_test.rb</filename>
-      <filetype>rb</filetype>
-      <usage_type>test</usage_type>
-      <checksum>FDE812FB</checksum>
+      <checksum>204BD05F</checksum>
     </file>
   </files>
 </measure>

@@ -3,16 +3,8 @@
 # see the URL below for information on how to write OpenStudio measures
 # http://nrel.github.io/OpenStudio-user-documentation/reference/measure_writing_guide/
 
-require 'csv'
 require 'openstudio'
-if File.exist? File.absolute_path(File.join(File.dirname(__FILE__), '../../lib/resources/hpxml-measures/HPXMLtoOpenStudio/resources')) # Hack to run ResStock on AWS
-  resources_path = File.absolute_path(File.join(File.dirname(__FILE__), '../../lib/resources/hpxml-measures/HPXMLtoOpenStudio/resources'))
-elsif File.exist? File.absolute_path(File.join(File.dirname(__FILE__), '../../resources/hpxml-measures/HPXMLtoOpenStudio/resources')) # Hack to run ResStock unit tests locally
-  resources_path = File.absolute_path(File.join(File.dirname(__FILE__), '../../resources/hpxml-measures/HPXMLtoOpenStudio/resources'))
-elsif File.exist? File.join(OpenStudio::BCLMeasure::userMeasuresDir.to_s, 'HPXMLtoOpenStudio/resources') # Hack to run measures in the OS App since applied measures are copied off into a temporary directory
-  resources_path = File.join(OpenStudio::BCLMeasure::userMeasuresDir.to_s, 'HPXMLtoOpenStudio/resources')
-end
-require File.join(resources_path, 'meta_measure')
+require_relative '../../resources/hpxml-measures/HPXMLtoOpenStudio/resources/meta_measure'
 
 # in addition to the above requires, this measure is expected to run in an
 # environment with resstock/resources/buildstock.rb loaded
@@ -35,7 +27,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
   end
 
   # define the arguments that the user will input
-  def arguments(model)
+  def arguments(model) # rubocop:disable Lint/UnusedMethodArgument
     args = OpenStudio::Ruleset::OSArgumentVector.new
 
     arg = OpenStudio::Ruleset::OSArgument.makeIntegerArgument('building_id', true)
@@ -183,7 +175,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     # Load buildstock_file
     require File.join(File.dirname(buildstock_file), File.basename(buildstock_file, File.extname(buildstock_file)))
 
+    Version.check_buildstockbatch_version()
+
     # Check file/dir paths exist
+    check_dir_exists(resources_dir, runner)
     [measures_dir, hpxml_measures_dir].each do |dir|
       check_dir_exists(dir, runner)
     end
@@ -199,6 +194,20 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     # Retrieve order of parameters to run
     parameters_ordered = get_parameters_ordered_from_options_lookup_tsv(lookup_csv_data, characteristics_dir)
 
+    # Check buildstock.csv has all parameters
+    missings = parameters_ordered - bldg_data.keys
+    if !missings.empty?
+      runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Missing parameters: #{missings.join(', ')}.")
+      return false
+    end
+
+    # Check buildstock.csv doesn't have extra parameters
+    extras = bldg_data.keys - parameters_ordered - ['Building']
+    if !extras.empty?
+      runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
+      return false
+    end
+
     # Retrieve options that have been selected for this building_id
     parameters_ordered.each do |parameter_name|
       # Register the option chosen for parameter_name with the runner
@@ -212,7 +221,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
       downselect_logic = args['downselect_logic'].get
       downselect_logic = downselect_logic.strip
-      downselected = evaluate_logic(downselect_logic, runner, past_results = false)
+      downselected = evaluate_logic(downselect_logic, runner, false)
 
       if downselected.nil?
         # unable to evaluate logic
@@ -235,7 +244,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       print_option_assignment(parameter_name, option_name, runner)
       options_measure_args = get_measure_args_from_option_names(lookup_csv_data, [option_name], parameter_name, lookup_file, runner)
       options_measure_args[option_name].each do |measure_subdir, args_hash|
-        update_args_hash(measures, measure_subdir, args_hash, add_new = false)
+        update_args_hash(measures, measure_subdir, args_hash, false)
       end
     end
 
@@ -290,8 +299,8 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
     # Get software program used and version
-    measures['BuildResidentialHPXML'][0]['software_info_program_used'] = Version.software_program_used
-    measures['BuildResidentialHPXML'][0]['software_info_program_version'] = Version.software_program_version
+    measures['BuildResidentialHPXML'][0]['software_info_program_used'] = 'ResStock'
+    measures['BuildResidentialHPXML'][0]['software_info_program_version'] = Version::ResStock_Version
 
     # Get registered values and pass them to BuildResidentialHPXML
     measures['BuildResidentialHPXML'][0]['simulation_control_timestep'] = args['simulation_control_timestep'].get if args['simulation_control_timestep'].is_initialized
@@ -396,14 +405,12 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     if run_hescore_workflow
       hes_json_path = File.expand_path('../hes.json')
       hes_hpxml_path = File.expand_path('../hes.xml')
-      hes_results_path = File.expand_path('../hes_results.json')
       measures['HPXMLtoHEScore'] = [{ 'hpxml_path' => hpxml_path, 'output_path' => hes_json_path }]
       measures['HEScoreRuleset'] = [{ 'json_path' => hes_json_path, 'hpxml_output_path' => hes_hpxml_path }]
-      measures['ReportHEScoreOutput'] = [{ 'json_path' => hes_json_path, 'hpxml_path' => hpxml_path, 'json_output_path' => hes_results_path }]
       measures['HPXMLtoOpenStudio'][0]['hpxml_path'] = hes_hpxml_path
 
-      # HPXMLtoHEScore, HEScoreRuleset, and ReportHEScoreOutput
-      measures_hash = { 'HPXMLtoHEScore' => measures['HPXMLtoHEScore'], 'HEScoreRuleset' => measures['HEScoreRuleset'], 'ReportHEScoreOutput' => measures['ReportHEScoreOutput'] }
+      # HPXMLtoHEScore and HEScoreRuleset
+      measures_hash = { 'HPXMLtoHEScore' => measures['HPXMLtoHEScore'], 'HEScoreRuleset' => measures['HEScoreRuleset'] }
 
       if not apply_measures(hes_ruleset_measures_dir, measures_hash, new_runner, model, true, 'OpenStudio::Measure::ModelMeasure')
         register_logs(runner, new_runner)

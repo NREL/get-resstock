@@ -1,4 +1,6 @@
 schema_version: '0.3'
+os_version: 3.4.0
+os_sha: 4bd816f785
 buildstock_directory: ../ # Relative to this file or absolute
 project_directory: project_testing # Relative to buildstock_directory
 output_directory: testing_upgrades
@@ -69,6 +71,14 @@ upgrades:
       - option: Insulation Wall|Wood Stud, R-13
         costs:
           - value: 2.21
+            multiplier: Wall Area, Above-Grade, Conditioned (ft^2)
+        lifetime: 999
+
+  - upgrade_name: Sheathing
+    options:
+      - option: Insulation Sheathing|R-5
+        costs:
+          - value: 2.01
             multiplier: Wall Area, Above-Grade, Conditioned (ft^2)
         lifetime: 999
 
@@ -152,8 +162,18 @@ upgrades:
           - value: 50.0
             multiplier: Size, Heating System Primary (kBtu/h)
         lifetime: 30
-      - option: HVAC Heating Type And Fuel|Electricity ASHP
-      - option: HVAC Cooling Efficiency|None
+      - option: HVAC Cooling Efficiency|Heat Pump
+
+  - upgrade_name: MSHP
+    options:
+      - option: HVAC Heating Efficiency|MSHP, SEER 25, 12.7 HSPF, Ducted
+        apply_logic:
+          - HVAC Has Ducts|Yes
+        costs:
+          - value: 50.0
+            multiplier: Size, Heating System Primary (kBtu/h)
+        lifetime: 30
+      - option: HVAC Cooling Efficiency|Heat Pump
 
   - upgrade_name: HPWH
     options:
@@ -190,6 +210,11 @@ upgrades:
       - option: Insulation Wall|Wood Stud, R-13
         costs:
           - value: 2.21
+            multiplier: Wall Area, Above-Grade, Conditioned (ft^2)
+        lifetime: 999
+      - option: Insulation Sheathing|R-5
+        costs:
+          - value: 2.01
             multiplier: Wall Area, Above-Grade, Conditioned (ft^2)
         lifetime: 999
       - option: Geometry Foundation Type|Unvented Crawlspace
@@ -252,8 +277,7 @@ upgrades:
           - value: 50.0
             multiplier: Size, Heating System Primary (kBtu/h)
         lifetime: 30
-      - option: HVAC Heating Type And Fuel|Electricity ASHP
-      - option: HVAC Cooling Efficiency|None
+      - option: HVAC Cooling Efficiency|Heat Pump
       - option: Water Heater Efficiency|Electric Heat Pump, 66 gal, 3.35 UEF
         costs:
           - value: 100.0
