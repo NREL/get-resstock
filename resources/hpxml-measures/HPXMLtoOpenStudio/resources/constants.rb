@@ -210,6 +210,10 @@ class Constants
     return 'ptac heating'
   end
 
+  def self.ObjectNameRoomACHeating
+    return 'room ac heating'
+  end
+
   def self.ObjectNameFurniture
     return 'furniture'
   end
@@ -274,6 +278,10 @@ class Constants
     return 'mech vent house fan cfis'
   end
 
+  def self.ObjectNameMechanicalVentilationHouseFanCFISSupplFan
+    return 'mech vent house fan cfis suppl'
+  end
+
   def self.ObjectNameMechanicalVentilationBathFan
     return 'mech vent bath fan'
   end
@@ -292,6 +300,10 @@ class Constants
 
   def self.ObjectNamePTHP
     return 'packaged terminal heat pump'
+  end
+
+  def self.ObjectNameRoomHP
+    return 'room ac with reverse cycle'
   end
 
   def self.ObjectNamePTAC
@@ -416,6 +428,10 @@ class Constants
 
   def self.ObjectNameWaterHeaterAdjustment(water_heater_name)
     return "#{water_heater_name} EC adjustment"
+  end
+
+  def self.ObjectNameBatteryLossesAdjustment(battery_name)
+    return "#{battery_name} losses adjustment"
   end
 
   def self.ObjectNameWaterLoopHeatPump

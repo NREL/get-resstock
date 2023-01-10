@@ -3,8 +3,8 @@
 class HPXMLDefaults
   # Note: Each HPXML object (e.g., HPXML::Wall) has an additional_properties
   # child object where custom information can be attached to the object without
-  # being written to the HPXML file. This is useful to associate additional values
-  # with the HPXML objects that will ultimately get passed around.
+  # being written to the HPXML file. This will allow the custom information to
+  # be used by subsequent calculations/logic.
 
   def self.apply(runner, hpxml, eri_version, weather, epw_file: nil, schedules_file: nil, convert_shared_systems: true)
     cfa = hpxml.building_construction.conditioned_floor_area
@@ -12,28 +12,18 @@ class HPXMLDefaults
     ncfl = hpxml.building_construction.number_of_conditioned_floors
     ncfl_ag = hpxml.building_construction.number_of_conditioned_floors_above_grade
     has_uncond_bsmnt = hpxml.has_location(HPXML::LocationBasementUnconditioned)
+    infil_volume, infil_height, infil_measurements = get_infil_values(hpxml)
 
-    infil_volume = nil
-    infil_height = nil
-    infil_measurements = []
-    hpxml.air_infiltration_measurements.each do |measurement|
-      is_ach = ((measurement.unit_of_measure == HPXML::UnitsACH) && !measurement.house_pressure.nil?)
-      is_cfm = ((measurement.unit_of_measure == HPXML::UnitsCFM) && !measurement.house_pressure.nil?)
-      is_nach = (measurement.unit_of_measure == HPXML::UnitsACHNatural)
-      next unless (is_ach || is_cfm || is_nach)
-
-      infil_measurements << measurement
-      if not measurement.infiltration_volume.nil?
-        infil_volume = measurement.infiltration_volume
-      end
-      if not measurement.infiltration_height.nil?
-        infil_height = measurement.infiltration_height
-      end
+    # Check for presence of fuels once
+    has_fuel = {}
+    hpxml_doc = hpxml.to_oga
+    Constants.FossilFuels.each do |fuel|
+      has_fuel[fuel] = hpxml.has_fuel(fuel, hpxml_doc)
     end
 
     apply_header(hpxml, epw_file)
-    apply_emissions_scenarios(hpxml)
-    apply_utility_bill_scenarios(runner, hpxml)
+    apply_emissions_scenarios(hpxml, has_fuel)
+    apply_utility_bill_scenarios(runner, hpxml, has_fuel)
     apply_site(hpxml)
     apply_neighbor_buildings(hpxml)
     apply_building_occupancy(hpxml, nbeds, schedules_file)
@@ -208,9 +198,14 @@ class HPXMLDefaults
       hpxml.header.temperature_capacitance_multiplier = 1.0
       hpxml.header.temperature_capacitance_multiplier_isdefaulted = true
     end
+
+    if hpxml.header.natvent_days_per_week.nil?
+      hpxml.header.natvent_days_per_week = 3
+      hpxml.header.natvent_days_per_week_isdefaulted = true
+    end
   end
 
-  def self.apply_emissions_scenarios(hpxml)
+  def self.apply_emissions_scenarios(hpxml, has_fuel)
     hpxml.header.emissions_scenarios.each do |scenario|
       # Electricity
       if not scenario.elec_schedule_filepath.nil?
@@ -235,36 +230,48 @@ class HPXMLDefaults
       else
         natural_gas, propane, fuel_oil, coal, wood, wood_pellets = nil, nil, nil, nil, nil, nil
       end
-      if (scenario.natural_gas_units.nil? || scenario.natural_gas_value.nil?) && (not natural_gas.nil?)
-        scenario.natural_gas_units = default_units
-        scenario.natural_gas_units_isdefaulted = true
-        scenario.natural_gas_value = natural_gas
-        scenario.natural_gas_value_isdefaulted = true
+      if has_fuel[HPXML::FuelTypeNaturalGas]
+        if (scenario.natural_gas_units.nil? || scenario.natural_gas_value.nil?) && (not natural_gas.nil?)
+          scenario.natural_gas_units = default_units
+          scenario.natural_gas_units_isdefaulted = true
+          scenario.natural_gas_value = natural_gas
+          scenario.natural_gas_value_isdefaulted = true
+        end
       end
-      if (scenario.propane_units.nil? || scenario.propane_value.nil?) && (not propane.nil?)
-        scenario.propane_units = default_units
-        scenario.propane_units_isdefaulted = true
-        scenario.propane_value = propane
-        scenario.propane_value_isdefaulted = true
+      if has_fuel[HPXML::FuelTypePropane]
+        if (scenario.propane_units.nil? || scenario.propane_value.nil?) && (not propane.nil?)
+          scenario.propane_units = default_units
+          scenario.propane_units_isdefaulted = true
+          scenario.propane_value = propane
+          scenario.propane_value_isdefaulted = true
+        end
       end
-      if (scenario.fuel_oil_units.nil? || scenario.fuel_oil_value.nil?) && (not fuel_oil.nil?)
-        scenario.fuel_oil_units = default_units
-        scenario.fuel_oil_units_isdefaulted = true
-        scenario.fuel_oil_value = fuel_oil
-        scenario.fuel_oil_value_isdefaulted = true
+      if has_fuel[HPXML::FuelTypeOil]
+        if (scenario.fuel_oil_units.nil? || scenario.fuel_oil_value.nil?) && (not fuel_oil.nil?)
+          scenario.fuel_oil_units = default_units
+          scenario.fuel_oil_units_isdefaulted = true
+          scenario.fuel_oil_value = fuel_oil
+          scenario.fuel_oil_value_isdefaulted = true
+        end
       end
-      if (scenario.coal_units.nil? || scenario.coal_value.nil?) && (not coal.nil?)
-        scenario.coal_units = default_units
-        scenario.coal_units_isdefaulted = true
-        scenario.coal_value = coal
-        scenario.coal_value_isdefaulted = true
+      if has_fuel[HPXML::FuelTypeCoal]
+        if (scenario.coal_units.nil? || scenario.coal_value.nil?) && (not coal.nil?)
+          scenario.coal_units = default_units
+          scenario.coal_units_isdefaulted = true
+          scenario.coal_value = coal
+          scenario.coal_value_isdefaulted = true
+        end
       end
-      if (scenario.wood_units.nil? || scenario.wood_value.nil?) && (not wood.nil?)
-        scenario.wood_units = default_units
-        scenario.wood_units_isdefaulted = true
-        scenario.wood_value = wood
-        scenario.wood_value_isdefaulted = true
+      if has_fuel[HPXML::FuelTypeWoodCord]
+        if (scenario.wood_units.nil? || scenario.wood_value.nil?) && (not wood.nil?)
+          scenario.wood_units = default_units
+          scenario.wood_units_isdefaulted = true
+          scenario.wood_value = wood
+          scenario.wood_value_isdefaulted = true
+        end
       end
+      next unless has_fuel[HPXML::FuelTypeWoodPellets]
+
       next unless (scenario.wood_pellets_units.nil? || scenario.wood_pellets_value.nil?) && (not wood_pellets.nil?)
 
       scenario.wood_pellets_units = default_units
@@ -274,12 +281,9 @@ class HPXMLDefaults
     end
   end
 
-  def self.apply_utility_bill_scenarios(runner, hpxml)
-    hpxml_doc = nil
+  def self.apply_utility_bill_scenarios(runner, hpxml, has_fuel)
     hpxml.header.utility_bill_scenarios.each do |scenario|
-      hpxml_doc = hpxml.to_oga if hpxml_doc.nil?
-
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeElectricity)
+      if scenario.elec_tariff_filepath.nil?
         if scenario.elec_fixed_charge.nil?
           scenario.elec_fixed_charge = 12.0 # https://www.nrdc.org/experts/samantha-williams/there-war-attrition-electricity-fixed-charges says $11.19/month in 2018
           scenario.elec_fixed_charge_isdefaulted = true
@@ -290,7 +294,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeNaturalGas)
+      if has_fuel[HPXML::FuelTypeNaturalGas]
         if scenario.natural_gas_fixed_charge.nil?
           scenario.natural_gas_fixed_charge = 12.0 # https://www.aga.org/sites/default/files/aga_energy_analysis_-_natural_gas_utility_rate_structure.pdf says $11.25/month in 2015
           scenario.natural_gas_fixed_charge_isdefaulted = true
@@ -301,7 +305,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypePropane)
+      if has_fuel[HPXML::FuelTypePropane]
         if scenario.propane_fixed_charge.nil?
           scenario.propane_fixed_charge = 0.0
           scenario.propane_fixed_charge_isdefaulted = true
@@ -312,7 +316,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeOil)
+      if has_fuel[HPXML::FuelTypeOil]
         if scenario.fuel_oil_fixed_charge.nil?
           scenario.fuel_oil_fixed_charge = 0.0
           scenario.fuel_oil_fixed_charge_isdefaulted = true
@@ -323,7 +327,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeCoal)
+      if has_fuel[HPXML::FuelTypeCoal]
         if scenario.coal_fixed_charge.nil?
           scenario.coal_fixed_charge = 0.0
           scenario.coal_fixed_charge_isdefaulted = true
@@ -334,7 +338,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeWoodCord)
+      if has_fuel[HPXML::FuelTypeWoodCord]
         if scenario.wood_fixed_charge.nil?
           scenario.wood_fixed_charge = 0.0
           scenario.wood_fixed_charge_isdefaulted = true
@@ -345,7 +349,7 @@ class HPXMLDefaults
         end
       end
 
-      if HPXML::has_fuel(hpxml_doc, HPXML::FuelTypeWoodPellets)
+      if has_fuel[HPXML::FuelTypeWoodPellets]
         if scenario.wood_pellets_fixed_charge.nil?
           scenario.wood_pellets_fixed_charge = 0.0
           scenario.wood_pellets_fixed_charge_isdefaulted = true
@@ -398,6 +402,12 @@ class HPXMLDefaults
       hpxml.site.shielding_of_home = HPXML::ShieldingNormal
       hpxml.site.shielding_of_home_isdefaulted = true
     end
+
+    if hpxml.site.ground_conductivity.nil?
+      hpxml.site.ground_conductivity = 1.0 # Btu/hr-ft-F
+      hpxml.site.ground_conductivity_isdefaulted = true
+    end
+
     hpxml.site.additional_properties.aim2_shelter_coeff = Airflow.get_aim2_shelter_coefficient(hpxml.site.shielding_of_home)
   end
 
@@ -419,7 +429,7 @@ class HPXMLDefaults
       hpxml.building_occupancy.number_of_residents = Geometry.get_occupancy_default_num(nbeds)
       hpxml.building_occupancy.number_of_residents_isdefaulted = true
     end
-    schedules_file_includes_occupants = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnOccupants)
+    schedules_file_includes_occupants = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnOccupants))
     if hpxml.building_occupancy.weekday_fractions.nil? && !schedules_file_includes_occupants
       hpxml.building_occupancy.weekday_fractions = Schedule.OccupantsWeekdayFractions
       hpxml.building_occupancy.weekday_fractions_isdefaulted = true
@@ -489,18 +499,13 @@ class HPXMLDefaults
   end
 
   def self.apply_climate_and_risk_zones(hpxml, epw_file)
-    if (not epw_file.nil?) && (hpxml.climate_and_risk_zones.iecc_zone.nil? || hpxml.climate_and_risk_zones.iecc_year.nil?)
-      if hpxml.climate_and_risk_zones.iecc_zone.nil?
-        climate_zone_iecc = Location.get_climate_zone_iecc(epw_file.wmoNumber)
-        if Constants.IECCZones.include? climate_zone_iecc
-          hpxml.climate_and_risk_zones.iecc_zone = climate_zone_iecc
-          hpxml.climate_and_risk_zones.iecc_zone_isdefaulted = true
-        end
-      end
-
-      if (not hpxml.climate_and_risk_zones.iecc_zone.nil?) && hpxml.climate_and_risk_zones.iecc_year.nil?
-        hpxml.climate_and_risk_zones.iecc_year = 2006
-        hpxml.climate_and_risk_zones.iecc_year_isdefaulted = true
+    if (not epw_file.nil?) && hpxml.climate_and_risk_zones.climate_zone_ieccs.empty?
+      zone = Location.get_climate_zone_iecc(epw_file.wmoNumber)
+      if not zone.nil?
+        hpxml.climate_and_risk_zones.climate_zone_ieccs.add(zone: zone,
+                                                            year: 2006,
+                                                            zone_isdefaulted: true,
+                                                            year_isdefaulted: true)
       end
     end
   end
@@ -753,6 +758,16 @@ class HPXMLDefaults
 
   def self.apply_floors(hpxml)
     hpxml.floors.each do |floor|
+      if floor.floor_or_ceiling.nil?
+        if floor.is_ceiling
+          floor.floor_or_ceiling = HPXML::FloorOrCeilingCeiling
+          floor.floor_or_ceiling_isdefaulted = true
+        elsif floor.is_floor
+          floor.floor_or_ceiling = HPXML::FloorOrCeilingFloor
+          floor.floor_or_ceiling_isdefaulted = true
+        end
+      end
+
       if floor.interior_finish_type.nil?
         if floor.is_floor
           floor.interior_finish_type = HPXML::InteriorFinishNone
@@ -995,90 +1010,37 @@ class HPXMLDefaults
       end
     end
 
-    # HVAC efficiencies (based on HEScore assumption)
-    hpxml.heating_systems.each do |heating_system|
-      year_installed = heating_system.year_installed
-      heating_system_type = heating_system.heating_system_type
-      heating_system_fuel = heating_system.heating_system_fuel
-
-      if [HPXML::HVACTypeBoiler, HPXML::HVACTypeFurnace, HPXML::HVACTypeWallFurnace, HPXML::HVACTypeFloorFurnace].include? heating_system_type
-        next unless heating_system.heating_efficiency_afue.nil?
-
-        if heating_system_fuel == HPXML::FuelTypeElectricity
-          heating_system.heating_efficiency_afue = 0.98
-        else
-          heating_system.heating_efficiency_afue = HVAC.get_default_hvac_efficiency_by_year_installed(year_installed, heating_system_type, heating_system_fuel, HPXML::UnitsAFUE)
-        end
-        heating_system.heating_efficiency_afue_isdefaulted = true
-      elsif [HPXML::HVACTypeElectricResistance, HPXML::HVACTypePTACHeating].include? heating_system_type
-        next unless heating_system.heating_efficiency_percent.nil?
-
-        heating_system.heating_efficiency_percent = 1.0
-        heating_system.heating_efficiency_percent_isdefaulted = true
-      elsif [HPXML::HVACTypeStove, HPXML::HVACTypeFireplace, HPXML::HVACTypePortableHeater, HPXML::HVACTypeFixedHeater].include? heating_system_type
-        next unless heating_system.heating_efficiency_percent.nil?
-
-        if heating_system_fuel == HPXML::FuelTypeElectricity
-          heating_system.heating_efficiency_percent = 1.0
-        elsif heating_system_fuel == HPXML::FuelTypeWoodCord
-          heating_system.heating_efficiency_percent = 0.60  # HEScore assumption
-        elsif heating_system_fuel == HPXML::FuelTypeWoodPellets
-          heating_system.heating_efficiency_percent = 0.78  # HEScore assumption
-        else
-          heating_system.heating_efficiency_percent = 0.81  # https://www.lopistoves.com/products/ and https://www.kozyheat.com/products/
-        end
-        heating_system.heating_efficiency_percent_isdefaulted = true
-      end
-    end
-
+    # Convert SEER2/HSPF2 to SEER/HSPF
     hpxml.cooling_systems.each do |cooling_system|
-      year_installed = cooling_system.year_installed
-      cooling_system_type = cooling_system.cooling_system_type
-      cooling_system_fuel = HPXML::FuelTypeElectricity
+      next unless [HPXML::HVACTypeCentralAirConditioner,
+                   HPXML::HVACTypeMiniSplitAirConditioner].include? cooling_system.cooling_system_type
+      next unless cooling_system.cooling_efficiency_seer.nil?
 
-      if cooling_system_type == HPXML::HVACTypeCentralAirConditioner
-        if cooling_system.cooling_efficiency_seer.nil?
-          if cooling_system.cooling_efficiency_seer2.nil?
-            cooling_system.cooling_efficiency_seer = HVAC.get_default_hvac_efficiency_by_year_installed(year_installed, cooling_system_type, cooling_system_fuel, HPXML::UnitsSEER)
-          else
-            cooling_system.cooling_efficiency_seer = HVAC.calc_seer_from_seer2(cooling_system.cooling_efficiency_seer2).round(2)
-            cooling_system.cooling_efficiency_seer2 = nil
-          end
-          cooling_system.cooling_efficiency_seer_isdefaulted = true
-        end
-      elsif [HPXML::HVACTypeRoomAirConditioner].include? cooling_system_type
-        next unless cooling_system.cooling_efficiency_eer.nil? && cooling_system.cooling_efficiency_ceer.nil?
-
-        cooling_system.cooling_efficiency_eer = HVAC.get_default_hvac_efficiency_by_year_installed(year_installed, cooling_system_type, cooling_system_fuel, HPXML::UnitsEER)
-        cooling_system.cooling_efficiency_eer_isdefaulted = true
-      end
+      is_ducted = !cooling_system.distribution_system_idref.nil?
+      cooling_system.cooling_efficiency_seer = HVAC.calc_seer_from_seer2(cooling_system.cooling_efficiency_seer2, is_ducted).round(2)
+      cooling_system.cooling_efficiency_seer_isdefaulted = true
+      cooling_system.cooling_efficiency_seer2 = nil
     end
 
     hpxml.heat_pumps.each do |heat_pump|
-      year_installed = heat_pump.year_installed
-      heat_pump_type = heat_pump.heat_pump_type
-      heat_pump_fuel = HPXML::FuelTypeElectricity
+      next unless [HPXML::HVACTypeHeatPumpAirToAir,
+                   HPXML::HVACTypeHeatPumpMiniSplit].include? heat_pump.heat_pump_type
+      next unless heat_pump.cooling_efficiency_seer.nil?
 
-      next unless [HPXML::HVACTypeHeatPumpAirToAir].include? heat_pump_type
-
-      if heat_pump.cooling_efficiency_seer.nil?
-        if heat_pump.cooling_efficiency_seer2.nil?
-          heat_pump.cooling_efficiency_seer = HVAC.get_default_hvac_efficiency_by_year_installed(year_installed, heat_pump_type, heat_pump_fuel, HPXML::UnitsSEER)
-        else
-          heat_pump.cooling_efficiency_seer = HVAC.calc_seer_from_seer2(heat_pump.cooling_efficiency_seer2).round(2)
-          heat_pump.cooling_efficiency_seer2 = nil
-        end
-        heat_pump.cooling_efficiency_seer_isdefaulted = true
-      end
+      is_ducted = !heat_pump.distribution_system_idref.nil?
+      heat_pump.cooling_efficiency_seer = HVAC.calc_seer_from_seer2(heat_pump.cooling_efficiency_seer2, is_ducted).round(2)
+      heat_pump.cooling_efficiency_seer_isdefaulted = true
+      heat_pump.cooling_efficiency_seer2 = nil
+    end
+    hpxml.heat_pumps.each do |heat_pump|
+      next unless [HPXML::HVACTypeHeatPumpAirToAir,
+                   HPXML::HVACTypeHeatPumpMiniSplit].include? heat_pump.heat_pump_type
       next unless heat_pump.heating_efficiency_hspf.nil?
 
-      if heat_pump.heating_efficiency_hspf2.nil?
-        heat_pump.heating_efficiency_hspf = HVAC.get_default_hvac_efficiency_by_year_installed(year_installed, heat_pump_type, heat_pump_fuel, HPXML::UnitsHSPF)
-      else
-        heat_pump.heating_efficiency_hspf = HVAC.calc_hspf_from_hspf2(heat_pump.heating_efficiency_hspf2).round(2)
-        heat_pump.heating_efficiency_hspf2 = nil
-      end
+      is_ducted = !heat_pump.distribution_system_idref.nil?
+      heat_pump.heating_efficiency_hspf = HVAC.calc_hspf_from_hspf2(heat_pump.heating_efficiency_hspf2, is_ducted).round(2)
       heat_pump.heating_efficiency_hspf_isdefaulted = true
+      heat_pump.heating_efficiency_hspf2 = nil
     end
 
     # Default AC/HP compressor type
@@ -1145,7 +1107,7 @@ class HPXMLDefaults
         if heat_pump.compressor_type == HPXML::HVACCompressorTypeSingleStage
           heat_pump.cooling_shr = 0.73
         elsif heat_pump.compressor_type == HPXML::HVACCompressorTypeTwoStage
-          heat_pump.cooling_shr = 0.724
+          heat_pump.cooling_shr = 0.73
         elsif heat_pump.compressor_type == HPXML::HVACCompressorTypeVariableSpeed
           heat_pump.cooling_shr = 0.78
         end
@@ -1154,9 +1116,10 @@ class HPXMLDefaults
         heat_pump.cooling_shr = 0.73
         heat_pump.cooling_shr_isdefaulted = true
       elsif heat_pump.heat_pump_type == HPXML::HVACTypeHeatPumpGroundToAir
-        heat_pump.cooling_shr = 0.732
+        heat_pump.cooling_shr = 0.73
         heat_pump.cooling_shr_isdefaulted = true
-      elsif heat_pump.heat_pump_type == HPXML::HVACTypeHeatPumpPTHP
+      elsif heat_pump.heat_pump_type == HPXML::HVACTypeHeatPumpPTHP ||
+            heat_pump.heat_pump_type == HPXML::HVACTypeHeatPumpRoom
         heat_pump.cooling_shr = 0.65
         heat_pump.cooling_shr_isdefaulted = true
       end
@@ -1224,7 +1187,7 @@ class HPXMLDefaults
     hpxml.heating_systems.each do |heating_system|
       if [HPXML::HVACTypeFurnace].include? heating_system.heating_system_type
         if heating_system.fan_watts_per_cfm.nil?
-          if heating_system.distribution_system.air_type == HPXML::AirTypeGravity
+          if (not heating_system.distribution_system.nil?) && (heating_system.distribution_system.air_type == HPXML::AirTypeGravity)
             heating_system.fan_watts_per_cfm = 0.0
           elsif heating_system.heating_efficiency_afue > 0.9 # HEScore assumption
             heating_system.fan_watts_per_cfm = ecm_watts_per_cfm
@@ -1353,8 +1316,9 @@ class HPXMLDefaults
     hpxml.heat_pumps.each do |heat_pump|
       hp_ap = heat_pump.additional_properties
       if [HPXML::HVACTypeHeatPumpAirToAir,
-          HPXML::HVACTypeHeatPumpPTHP].include? heat_pump.heat_pump_type
-        if heat_pump.heat_pump_type == HPXML::HVACTypeHeatPumpPTHP
+          HPXML::HVACTypeHeatPumpPTHP,
+          HPXML::HVACTypeHeatPumpRoom].include? heat_pump.heat_pump_type
+        if [HPXML::HVACTypeHeatPumpPTHP, HPXML::HVACTypeHeatPumpRoom].include? heat_pump.heat_pump_type
           use_eer_cop = true
         else
           use_eer_cop = false
@@ -1407,7 +1371,7 @@ class HPXMLDefaults
 
   def self.apply_hvac_control(hpxml, schedules_file)
     hpxml.hvac_controls.each do |hvac_control|
-      schedules_file_includes_heating_setpoint_temp = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnHeatingSetpoint)
+      schedules_file_includes_heating_setpoint_temp = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnHeatingSetpoint))
       if hvac_control.heating_setpoint_temp.nil? && hvac_control.weekday_heating_setpoints.nil? && !schedules_file_includes_heating_setpoint_temp
         # No heating setpoints; set a default heating setpoint for, e.g., natural ventilation
         htg_sp, _htg_setback_sp, _htg_setback_hrs_per_week, _htg_setback_start_hr = HVAC.get_default_heating_setpoint(HPXML::HVACControlTypeManual)
@@ -1415,7 +1379,7 @@ class HPXMLDefaults
         hvac_control.heating_setpoint_temp_isdefaulted = true
       end
 
-      schedules_file_includes_cooling_setpoint_temp = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnCoolingSetpoint)
+      schedules_file_includes_cooling_setpoint_temp = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnCoolingSetpoint))
       if hvac_control.cooling_setpoint_temp.nil? && hvac_control.weekday_cooling_setpoints.nil? && !schedules_file_includes_cooling_setpoint_temp
         # No cooling setpoints; set a default cooling setpoint for, e.g., natural ventilation
         clg_sp, _clg_setup_sp, _clg_setup_hrs_per_week, _clg_setup_start_hr = HVAC.get_default_cooling_setpoint(HPXML::HVACControlTypeManual)
@@ -1461,7 +1425,7 @@ class HPXMLDefaults
 
   def self.apply_hvac_distribution(hpxml, ncfl, ncfl_ag)
     hpxml.hvac_distributions.each do |hvac_distribution|
-      next unless [HPXML::HVACDistributionTypeAir].include? hvac_distribution.distribution_system_type
+      next unless hvac_distribution.distribution_system_type == HPXML::HVACDistributionTypeAir
       next if hvac_distribution.ducts.empty?
 
       # Default ducts
@@ -1496,7 +1460,8 @@ class HPXMLDefaults
               duct.duct_location_isdefaulted = true
 
               if secondary_duct_area > 0
-                hvac_distribution.ducts.add(duct_type: duct.duct_type,
+                hvac_distribution.ducts.add(id: "#{duct.id}_secondary",
+                                            duct_type: duct.duct_type,
                                             duct_insulation_r_value: duct.duct_insulation_r_value,
                                             duct_location: secondary_duct_location,
                                             duct_location_isdefaulted: true,
@@ -1534,6 +1499,13 @@ class HPXMLDefaults
           duct.duct_fraction_area_isdefaulted = true
         end
       end
+
+      hvac_distribution.ducts.each do |ducts|
+        next unless ducts.duct_surface_area_multiplier.nil?
+
+        ducts.duct_surface_area_multiplier = 1.0
+        ducts.duct_surface_area_multiplier_isdefaulted = true
+      end
     end
   end
 
@@ -1546,25 +1518,31 @@ class HPXMLDefaults
         vent_fan.is_shared_system = false
         vent_fan.is_shared_system_isdefaulted = true
       end
-      if vent_fan.hours_in_operation.nil?
+      if vent_fan.hours_in_operation.nil? && !vent_fan.is_cfis_supplemental_fan?
         vent_fan.hours_in_operation = (vent_fan.fan_type == HPXML::MechVentTypeCFIS) ? 8.0 : 24.0
         vent_fan.hours_in_operation_isdefaulted = true
       end
       if vent_fan.rated_flow_rate.nil? && vent_fan.tested_flow_rate.nil? && vent_fan.calculated_flow_rate.nil? && vent_fan.delivered_ventilation.nil?
-        if hpxml.ventilation_fans.select { |vf| vf.used_for_whole_building_ventilation }.size > 1
+        if hpxml.ventilation_fans.select { |vf| vf.used_for_whole_building_ventilation && !vf.is_cfis_supplemental_fan? }.size > 1
           fail 'Defaulting flow rates for multiple mechanical ventilation systems is currently not supported.'
         end
 
-        vent_fan.rated_flow_rate = Airflow.get_default_mech_vent_flow_rate(hpxml, vent_fan, infil_measurements, weather, 1.0, cfa, nbeds).round(1)
+        vent_fan.rated_flow_rate = Airflow.get_default_mech_vent_flow_rate(hpxml, vent_fan, infil_measurements, weather, cfa, nbeds).round(1)
         vent_fan.rated_flow_rate_isdefaulted = true
       end
       if vent_fan.fan_power.nil?
         vent_fan.fan_power = (vent_fan.flow_rate * Airflow.get_default_mech_vent_fan_power(vent_fan)).round(1)
         vent_fan.fan_power_isdefaulted = true
       end
-      if vent_fan.cfis_vent_mode_airflow_fraction.nil? && (vent_fan.fan_type == HPXML::MechVentTypeCFIS)
+      next unless vent_fan.fan_type == HPXML::MechVentTypeCFIS
+
+      if vent_fan.cfis_vent_mode_airflow_fraction.nil?
         vent_fan.cfis_vent_mode_airflow_fraction = 1.0
         vent_fan.cfis_vent_mode_airflow_fraction_isdefaulted = true
+      end
+      if vent_fan.cfis_addtl_runtime_operating_mode.nil?
+        vent_fan.cfis_addtl_runtime_operating_mode = HPXML::CFISModeAirHandler
+        vent_fan.cfis_addtl_runtime_operating_mode_isdefaulted = true
       end
     end
 
@@ -1641,7 +1619,7 @@ class HPXMLDefaults
         water_heating_system.is_shared_system = false
         water_heating_system.is_shared_system_isdefaulted = true
       end
-      schedules_file_includes_water_heater_setpoint_temp = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnWaterHeaterSetpoint)
+      schedules_file_includes_water_heater_setpoint_temp = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnWaterHeaterSetpoint))
       if water_heating_system.temperature.nil? && !schedules_file_includes_water_heater_setpoint_temp
         water_heating_system.temperature = Waterheater.get_default_hot_water_temperature(eri_version)
         water_heating_system.temperature_isdefaulted = true
@@ -1650,14 +1628,16 @@ class HPXMLDefaults
         water_heating_system.performance_adjustment = Waterheater.get_default_performance_adjustment(water_heating_system)
         water_heating_system.performance_adjustment_isdefaulted = true
       end
-      if (water_heating_system.water_heater_type == HPXML::WaterHeaterTypeCombiStorage) && water_heating_system.standby_loss.nil?
+      if (water_heating_system.water_heater_type == HPXML::WaterHeaterTypeCombiStorage) && water_heating_system.standby_loss_value.nil?
         # Use equation fit from AHRI database
         # calculate independent variable SurfaceArea/vol(physically linear to standby_loss/skin_u under test condition) to fit the linear equation from AHRI database
         act_vol = Waterheater.calc_storage_tank_actual_vol(water_heating_system.tank_volume, nil)
         surface_area = Waterheater.calc_tank_areas(act_vol)[0]
         sqft_by_gal = surface_area / act_vol # sqft/gal
-        water_heating_system.standby_loss = (2.9721 * sqft_by_gal - 0.4732).round(3) # linear equation assuming a constant u, F/hr
-        water_heating_system.standby_loss_isdefaulted = true
+        water_heating_system.standby_loss_value = (2.9721 * sqft_by_gal - 0.4732).round(3) # linear equation assuming a constant u, F/hr
+        water_heating_system.standby_loss_value_isdefaulted = true
+        water_heating_system.standby_loss_units = HPXML::UnitsDegFPerHour
+        water_heating_system.standby_loss_units_isdefaulted = true
       end
       if (water_heating_system.water_heater_type == HPXML::WaterHeaterTypeStorage)
         if water_heating_system.heating_capacity.nil?
@@ -1667,10 +1647,6 @@ class HPXMLDefaults
         if water_heating_system.tank_volume.nil?
           water_heating_system.tank_volume = Waterheater.get_default_tank_volume(water_heating_system.fuel_type, nbeds, hpxml.building_construction.number_of_bathrooms)
           water_heating_system.tank_volume_isdefaulted = true
-        end
-        if water_heating_system.energy_factor.nil? && water_heating_system.uniform_energy_factor.nil?
-          water_heating_system.energy_factor = Waterheater.get_default_water_heater_efficiency_by_year_installed(water_heating_system.year_installed, water_heating_system.fuel_type)
-          water_heating_system.energy_factor_isdefaulted = true
         end
         if water_heating_system.recovery_efficiency.nil?
           water_heating_system.recovery_efficiency = Waterheater.get_default_recovery_efficiency(water_heating_system)
@@ -1682,14 +1658,14 @@ class HPXMLDefaults
         end
       end
       if (water_heating_system.water_heater_type == HPXML::WaterHeaterTypeHeatPump)
-        schedules_file_includes_water_heater_operating_mode = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnWaterHeaterOperatingMode)
+        schedules_file_includes_water_heater_operating_mode = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnWaterHeaterOperatingMode))
         if water_heating_system.operating_mode.nil? && !schedules_file_includes_water_heater_operating_mode
           water_heating_system.operating_mode = HPXML::WaterHeaterOperatingModeStandard
           water_heating_system.operating_mode_isdefaulted = true
         end
       end
       if water_heating_system.location.nil?
-        water_heating_system.location = Waterheater.get_default_location(hpxml, hpxml.climate_and_risk_zones.iecc_zone)
+        water_heating_system.location = Waterheater.get_default_location(hpxml, hpxml.climate_and_risk_zones.climate_zone_ieccs[0])
         water_heating_system.location_isdefaulted = true
       end
       next unless water_heating_system.usage_bin.nil? && (not water_heating_system.uniform_energy_factor.nil?) # FHR & UsageBin only applies to UEF
@@ -1748,7 +1724,7 @@ class HPXMLDefaults
       hpxml.water_heating.water_fixtures_usage_multiplier = 1.0
       hpxml.water_heating.water_fixtures_usage_multiplier_isdefaulted = true
     end
-    schedules_file_includes_fixtures = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnHotWaterFixtures)
+    schedules_file_includes_fixtures = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnHotWaterFixtures))
     if hpxml.water_heating.water_fixtures_weekday_fractions.nil? && !schedules_file_includes_fixtures
       hpxml.water_heating.water_fixtures_weekday_fractions = Schedule.FixturesWeekdayFractions
       hpxml.water_heating.water_fixtures_weekday_fractions_isdefaulted = true
@@ -1827,19 +1803,23 @@ class HPXMLDefaults
   end
 
   def self.apply_batteries(hpxml)
-    default_values = Battery.get_battery_default_values()
+    default_values = Battery.get_battery_default_values(hpxml.has_location(HPXML::LocationGarage))
     hpxml.batteries.each do |battery|
       if battery.location.nil?
         battery.location = default_values[:location]
         battery.location_isdefaulted = true
       end
-      if battery.lifetime_model.nil?
-        battery.lifetime_model = default_values[:lifetime_model]
-        battery.lifetime_model_isdefaulted = true
-      end
+      # if battery.lifetime_model.nil?
+      # battery.lifetime_model = default_values[:lifetime_model]
+      # battery.lifetime_model_isdefaulted = true
+      # end
       if battery.nominal_voltage.nil?
         battery.nominal_voltage = default_values[:nominal_voltage] # V
         battery.nominal_voltage_isdefaulted = true
+      end
+      if battery.round_trip_efficiency.nil?
+        battery.round_trip_efficiency = default_values[:round_trip_efficiency]
+        battery.round_trip_efficiency_isdefaulted = true
       end
       if battery.nominal_capacity_kwh.nil? && battery.nominal_capacity_ah.nil?
         # Calculate nominal capacity from usable capacity or rated power output if available
@@ -1912,7 +1892,7 @@ class HPXMLDefaults
         clothes_washer.usage_multiplier = 1.0
         clothes_washer.usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_cw = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnClothesWasher)
+      schedules_file_includes_cw = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnClothesWasher))
       if clothes_washer.weekday_fractions.nil? && !schedules_file_includes_cw
         clothes_washer.weekday_fractions = Schedule.ClothesWasherWeekdayFractions
         clothes_washer.weekday_fractions_isdefaulted = true
@@ -1960,7 +1940,7 @@ class HPXMLDefaults
         clothes_dryer.vented_flow_rate = 100.0
         clothes_dryer.vented_flow_rate_isdefaulted = true
       end
-      schedules_file_includes_cd = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnClothesDryer)
+      schedules_file_includes_cd = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnClothesDryer))
       if clothes_dryer.weekday_fractions.nil? && !schedules_file_includes_cd
         clothes_dryer.weekday_fractions = Schedule.ClothesDryerWeekdayFractions
         clothes_dryer.weekday_fractions_isdefaulted = true
@@ -2005,7 +1985,7 @@ class HPXMLDefaults
         dishwasher.usage_multiplier = 1.0
         dishwasher.usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_dw = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnDishwasher)
+      schedules_file_includes_dw = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnDishwasher))
       if dishwasher.weekday_fractions.nil? && !schedules_file_includes_dw
         dishwasher.weekday_fractions = Schedule.DishwasherWeekdayFractions
         dishwasher.weekday_fractions_isdefaulted = true
@@ -2036,7 +2016,7 @@ class HPXMLDefaults
           refrigerator.rated_annual_kwh = default_values[:rated_annual_kwh]
           refrigerator.rated_annual_kwh_isdefaulted = true
         end
-        schedules_file_includes_extrafridge = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnExtraRefrigerator)
+        schedules_file_includes_extrafridge = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnExtraRefrigerator))
         if refrigerator.weekday_fractions.nil? && !schedules_file_includes_extrafridge
           refrigerator.weekday_fractions = Schedule.ExtraRefrigeratorWeekdayFractions
           refrigerator.weekday_fractions_isdefaulted = true
@@ -2059,7 +2039,7 @@ class HPXMLDefaults
           refrigerator.rated_annual_kwh = default_values[:rated_annual_kwh]
           refrigerator.rated_annual_kwh_isdefaulted = true
         end
-        schedules_file_includes_fridge = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnRefrigerator)
+        schedules_file_includes_fridge = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnRefrigerator))
         if refrigerator.weekday_fractions.nil? && !schedules_file_includes_fridge
           refrigerator.weekday_fractions = Schedule.RefrigeratorWeekdayFractions
           refrigerator.weekday_fractions_isdefaulted = true
@@ -2094,7 +2074,7 @@ class HPXMLDefaults
         freezer.usage_multiplier = 1.0
         freezer.usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_freezer = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnFreezer)
+      schedules_file_includes_freezer = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnFreezer))
       if freezer.weekday_fractions.nil? && !schedules_file_includes_freezer
         freezer.weekday_fractions = Schedule.FreezerWeekdayFractions
         freezer.weekday_fractions_isdefaulted = true
@@ -2125,7 +2105,7 @@ class HPXMLDefaults
         cooking_range.usage_multiplier = 1.0
         cooking_range.usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_range = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnCookingRange)
+      schedules_file_includes_range = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnCookingRange))
       if cooking_range.weekday_fractions.nil? && !schedules_file_includes_range
         cooking_range.weekday_fractions = Schedule.CookingRangeWeekdayFractions
         cooking_range.weekday_fractions_isdefaulted = true
@@ -2171,7 +2151,7 @@ class HPXMLDefaults
     default_exterior_lighting_weekend_fractions = Schedule.LightingExteriorWeekendFractions
     default_exterior_lighting_monthly_multipliers = Schedule.LightingExteriorMonthlyMultipliers
     if hpxml.has_location(HPXML::LocationGarage)
-      schedules_file_includes_lighting_garage = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnLightingGarage)
+      schedules_file_includes_lighting_garage = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnLightingGarage))
       if hpxml.lighting.garage_weekday_fractions.nil? && !schedules_file_includes_lighting_garage
         hpxml.lighting.garage_weekday_fractions = default_exterior_lighting_weekday_fractions
         hpxml.lighting.garage_weekday_fractions_isdefaulted = true
@@ -2185,7 +2165,7 @@ class HPXMLDefaults
         hpxml.lighting.garage_monthly_multipliers_isdefaulted = true
       end
     end
-    schedules_file_includes_lighting_exterior = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnLightingExterior)
+    schedules_file_includes_lighting_exterior = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnLightingExterior))
     if hpxml.lighting.exterior_weekday_fractions.nil? && !schedules_file_includes_lighting_exterior
       hpxml.lighting.exterior_weekday_fractions = default_exterior_lighting_weekday_fractions
       hpxml.lighting.exterior_weekday_fractions_isdefaulted = true
@@ -2220,7 +2200,7 @@ class HPXMLDefaults
         hpxml.lighting.holiday_period_end_day = 6
         hpxml.lighting.holiday_period_end_day_isdefaulted = true
       end
-      schedules_file_includes_lighting_holiday_exterior = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnLightingExteriorHoliday)
+      schedules_file_includes_lighting_holiday_exterior = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnLightingExteriorHoliday))
       if hpxml.lighting.holiday_weekday_fractions.nil? && !schedules_file_includes_lighting_holiday_exterior
         hpxml.lighting.holiday_weekday_fractions = Schedule.LightingExteriorHolidayWeekdayFractions
         hpxml.lighting.holiday_weekday_fractions_isdefaulted = true
@@ -2245,7 +2225,7 @@ class HPXMLDefaults
       ceiling_fan.quantity = HVAC.get_default_ceiling_fan_quantity(nbeds)
       ceiling_fan.quantity_isdefaulted = true
     end
-    schedules_file_includes_ceiling_fan = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnCeilingFan)
+    schedules_file_includes_ceiling_fan = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnCeilingFan))
     if ceiling_fan.weekday_fractions.nil? && !schedules_file_includes_ceiling_fan
       ceiling_fan.weekday_fractions = Schedule.CeilingFanWeekdayFractions
       ceiling_fan.weekday_fractions_isdefaulted = true
@@ -2274,7 +2254,7 @@ class HPXMLDefaults
           pool.pump_usage_multiplier = 1.0
           pool.pump_usage_multiplier_isdefaulted = true
         end
-        schedules_file_includes_pool_pump = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPoolPump)
+        schedules_file_includes_pool_pump = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPoolPump))
         if pool.pump_weekday_fractions.nil? && !schedules_file_includes_pool_pump
           pool.pump_weekday_fractions = Schedule.PoolPumpWeekdayFractions
           pool.pump_weekday_fractions_isdefaulted = true
@@ -2302,7 +2282,7 @@ class HPXMLDefaults
         pool.heater_usage_multiplier = 1.0
         pool.heater_usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_pool_heater = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPoolHeater)
+      schedules_file_includes_pool_heater = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPoolHeater))
       if pool.heater_weekday_fractions.nil? && !schedules_file_includes_pool_heater
         pool.heater_weekday_fractions = Schedule.PoolHeaterWeekdayFractions
         pool.heater_weekday_fractions_isdefaulted = true
@@ -2330,7 +2310,7 @@ class HPXMLDefaults
           hot_tub.pump_usage_multiplier = 1.0
           hot_tub.pump_usage_multiplier_isdefaulted = true
         end
-        schedules_file_includes_hot_tub_pump = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnHotTubPump)
+        schedules_file_includes_hot_tub_pump = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnHotTubPump))
         if hot_tub.pump_weekday_fractions.nil? && !schedules_file_includes_hot_tub_pump
           hot_tub.pump_weekday_fractions = Schedule.HotTubPumpWeekdayFractions
           hot_tub.pump_weekday_fractions_isdefaulted = true
@@ -2358,7 +2338,7 @@ class HPXMLDefaults
         hot_tub.heater_usage_multiplier = 1.0
         hot_tub.heater_usage_multiplier_isdefaulted = true
       end
-      schedules_file_includes_hot_tub_heater = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnHotTubHeater)
+      schedules_file_includes_hot_tub_heater = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnHotTubHeater))
       if hot_tub.heater_weekday_fractions.nil? && !schedules_file_includes_hot_tub_heater
         hot_tub.heater_weekday_fractions = Schedule.HotTubHeaterWeekdayFractions
         hot_tub.heater_weekday_fractions_isdefaulted = true
@@ -2390,7 +2370,7 @@ class HPXMLDefaults
           plug_load.frac_latent = default_lat_frac
           plug_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_plug_loads_other = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPlugLoadsOther)
+        schedules_file_includes_plug_loads_other = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPlugLoadsOther))
         if plug_load.weekday_fractions.nil? && !schedules_file_includes_plug_loads_other
           plug_load.weekday_fractions = Schedule.PlugLoadsOtherWeekdayFractions
           plug_load.weekday_fractions_isdefaulted = true
@@ -2417,7 +2397,7 @@ class HPXMLDefaults
           plug_load.frac_latent = default_lat_frac
           plug_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_plug_loads_tv = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPlugLoadsTV)
+        schedules_file_includes_plug_loads_tv = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPlugLoadsTV))
         if plug_load.weekday_fractions.nil? && !schedules_file_includes_plug_loads_tv
           plug_load.weekday_fractions = Schedule.PlugLoadsTVWeekdayFractions
           plug_load.weekday_fractions_isdefaulted = true
@@ -2444,7 +2424,7 @@ class HPXMLDefaults
           plug_load.frac_latent = 0.0
           plug_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_plug_loads_vehicle = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPlugLoadsVehicle)
+        schedules_file_includes_plug_loads_vehicle = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPlugLoadsVehicle))
         if plug_load.weekday_fractions.nil? && !schedules_file_includes_plug_loads_vehicle
           plug_load.weekday_fractions = Schedule.PlugLoadsVehicleWeekdayFractions
           plug_load.weekday_fractions_isdefaulted = true
@@ -2471,7 +2451,7 @@ class HPXMLDefaults
           plug_load.frac_latent = 0.0
           plug_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_plug_loads_well_pump = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnPlugLoadsWellPump)
+        schedules_file_includes_plug_loads_well_pump = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnPlugLoadsWellPump))
         if plug_load.weekday_fractions.nil? && !schedules_file_includes_plug_loads_well_pump
           plug_load.weekday_fractions = Schedule.PlugLoadsWellPumpWeekdayFractions
           plug_load.weekday_fractions_isdefaulted = true
@@ -2507,7 +2487,7 @@ class HPXMLDefaults
           fuel_load.frac_latent = 0.0
           fuel_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_fuel_loads_grill = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnFuelLoadsGrill)
+        schedules_file_includes_fuel_loads_grill = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnFuelLoadsGrill))
         if fuel_load.weekday_fractions.nil? && !schedules_file_includes_fuel_loads_grill
           fuel_load.weekday_fractions = Schedule.FuelLoadsGrillWeekdayFractions
           fuel_load.weekday_fractions_isdefaulted = true
@@ -2533,7 +2513,7 @@ class HPXMLDefaults
           fuel_load.frac_latent = 0.0
           fuel_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_fuel_loads_lighting = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnFuelLoadsLighting)
+        schedules_file_includes_fuel_loads_lighting = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnFuelLoadsLighting))
         if fuel_load.weekday_fractions.nil? && !schedules_file_includes_fuel_loads_lighting
           fuel_load.weekday_fractions = Schedule.FuelLoadsLightingWeekdayFractions
           fuel_load.weekday_fractions_isdefaulted = true
@@ -2559,7 +2539,7 @@ class HPXMLDefaults
           fuel_load.frac_latent = 0.1
           fuel_load.frac_latent_isdefaulted = true
         end
-        schedules_file_includes_fuel_loads_fireplace = Schedule.schedules_file_includes_col_name(schedules_file, SchedulesFile::ColumnFuelLoadsFireplace)
+        schedules_file_includes_fuel_loads_fireplace = (schedules_file.nil? ? false : schedules_file.includes_col_name(SchedulesFile::ColumnFuelLoadsFireplace))
         if fuel_load.weekday_fractions.nil? && !schedules_file_includes_fuel_loads_fireplace
           fuel_load.weekday_fractions = Schedule.FuelLoadsFireplaceWeekdayFractions
           fuel_load.weekday_fractions_isdefaulted = true
@@ -2589,7 +2569,7 @@ class HPXMLDefaults
     hvacpl = hpxml.hvac_plant
     tol = 10 # Btuh
 
-    # Assign heating design loads back to HPXML object
+    # Assign heating design loads to HPXML object
     hvacpl.hdl_total = bldg_design_loads.Heat_Tot.round
     hvacpl.hdl_walls = bldg_design_loads.Heat_Walls.round
     hvacpl.hdl_ceilings = bldg_design_loads.Heat_Ceilings.round
@@ -2609,7 +2589,7 @@ class HPXMLDefaults
       fail 'Heating design loads do not sum to total.'
     end
 
-    # Cooling sensible design loads back to HPXML object
+    # Assign cooling sensible design loads to HPXML object
     hvacpl.cdl_sens_total = bldg_design_loads.Cool_Sens.round
     hvacpl.cdl_sens_walls = bldg_design_loads.Cool_Walls.round
     hvacpl.cdl_sens_ceilings = bldg_design_loads.Cool_Ceilings.round
@@ -2632,7 +2612,7 @@ class HPXMLDefaults
       fail 'Cooling sensible design loads do not sum to total.'
     end
 
-    # Cooling latent design loads back to HPXML object
+    # Assign cooling latent design loads to HPXML object
     hvacpl.cdl_lat_total = bldg_design_loads.Cool_Lat.round
     hvacpl.cdl_lat_ducts = bldg_design_loads.Cool_Ducts_Lat.round
     hvacpl.cdl_lat_infilvent = bldg_design_loads.Cool_Infil_Lat.round
@@ -2643,7 +2623,11 @@ class HPXMLDefaults
       fail 'Cooling latent design loads do not sum to total.'
     end
 
-    # Assign sizing values back to HPXML objects
+    # Assign design temperatures to HPXML object
+    hvacpl.temp_heating = weather.design.HeatingDrybulb.round(2)
+    hvacpl.temp_cooling = weather.design.CoolingDrybulb.round(2)
+
+    # Assign sizing values to HPXML objects
     all_hvac_sizing_values.each do |hvac_system, hvac_sizing_values|
       htg_sys = hvac_system[:heating]
       clg_sys = hvac_system[:cooling]
@@ -2707,6 +2691,15 @@ class HPXMLDefaults
       if clg_sys.cooling_capacity.nil? || ((clg_sys.cooling_capacity - hvac_sizing_values.Cool_Capacity).abs >= 1.0)
         clg_sys.cooling_capacity = hvac_sizing_values.Cool_Capacity.round
         clg_sys.cooling_capacity_isdefaulted = true
+      end
+      # Integrated heating system capacities
+      if (clg_sys.is_a? HPXML::CoolingSystem) && clg_sys.has_integrated_heating
+        if clg_sys.integrated_heating_system_capacity.nil? || ((clg_sys.integrated_heating_system_capacity - hvac_sizing_values.Heat_Capacity).abs >= 1.0)
+          clg_sys.integrated_heating_system_capacity = hvac_sizing_values.Heat_Capacity.round
+          clg_sys.integrated_heating_system_capacity_isdefaulted = true
+        end
+        clg_sys.integrated_heating_system_airflow_cfm = hvac_sizing_values.Heat_Airflow.round
+        clg_sys.integrated_heating_system_airflow_cfm_isdefaulted = true
       end
       clg_sys.additional_properties.cooling_capacity_sensible = hvac_sizing_values.Cool_Capacity_Sens.round
 
@@ -2776,5 +2769,26 @@ class HPXMLDefaults
         return -1.47 + 1.69 * noccs
       end
     end
+  end
+
+  def self.get_infil_values(hpxml)
+    infil_volume = nil
+    infil_height = nil
+    infil_measurements = []
+    hpxml.air_infiltration_measurements.each do |measurement|
+      is_ach = ((measurement.unit_of_measure == HPXML::UnitsACH) && !measurement.house_pressure.nil?)
+      is_cfm = ((measurement.unit_of_measure == HPXML::UnitsCFM) && !measurement.house_pressure.nil?)
+      is_nach = (measurement.unit_of_measure == HPXML::UnitsACHNatural)
+      next unless (is_ach || is_cfm || is_nach)
+
+      infil_measurements << measurement
+      if not measurement.infiltration_volume.nil?
+        infil_volume = measurement.infiltration_volume
+      end
+      if not measurement.infiltration_height.nil?
+        infil_height = measurement.infiltration_height
+      end
+    end
+    return infil_volume, infil_height, infil_measurements
   end
 end

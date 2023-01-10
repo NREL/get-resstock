@@ -10,13 +10,6 @@
     <extension>
       <SimulationControl>
         <Timestep>60</Timestep>
-        <DaylightSaving>
-          <Enabled>true</Enabled>
-          <BeginMonth>3</BeginMonth>
-          <BeginDayOfMonth>10</BeginDayOfMonth>
-          <EndMonth>11</EndMonth>
-          <EndDayOfMonth>6</EndDayOfMonth>
-        </DaylightSaving>
       </SimulationControl>
       <AdditionalProperties>
         <ParentHPXMLFile>base.xml</ParentHPXMLFile>
@@ -35,6 +28,15 @@
       <Address>
         <StateCode>CO</StateCode>
       </Address>
+      <TimeZone>
+        <DSTObserved>true</DSTObserved>
+        <extension>
+          <DSTBeginMonth>3</DSTBeginMonth>
+          <DSTBeginDayOfMonth>10</DSTBeginDayOfMonth>
+          <DSTEndMonth>11</DSTEndMonth>
+          <DSTEndDayOfMonth>6</DSTEndDayOfMonth>
+        </extension>
+      </TimeZone>
     </Site>
     <ProjectStatus>
       <EventType>proposed workscope</EventType>
@@ -218,6 +220,10 @@
             <SystemIdentifier id='Floor1'/>
             <ExteriorAdjacentTo>attic - unvented</ExteriorAdjacentTo>
             <InteriorAdjacentTo>living space</InteriorAdjacentTo>
+            <FloorOrCeiling>ceiling</FloorOrCeiling>
+            <FloorType>
+              <WoodFrame/>
+            </FloorType>
             <Area>1350.0</Area>
             <InteriorFinish>
               <Type>gypsum board</Type>
@@ -386,12 +392,14 @@
                   </DuctLeakage>
                 </DuctLeakageMeasurement>
                 <Ducts>
+                  <SystemIdentifier id='Ducts1'/>
                   <DuctType>supply</DuctType>
                   <DuctInsulationRValue>4.0</DuctInsulationRValue>
                   <DuctLocation>attic - unvented</DuctLocation>
                   <DuctSurfaceArea>150.0</DuctSurfaceArea>
                 </Ducts>
                 <Ducts>
+                  <SystemIdentifier id='Ducts2'/>
                   <DuctType>return</DuctType>
                   <DuctInsulationRValue>0.0</DuctInsulationRValue>
                   <DuctLocation>attic - unvented</DuctLocation>
