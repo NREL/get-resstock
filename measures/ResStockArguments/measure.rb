@@ -471,7 +471,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
         end
 
         n_du = Float(args['geometry_building_num_units'].to_s)
-        # args['pv_system_num_bedrooms_served'] *= n_du
+        args['pv_system_num_bedrooms_served'] *= n_du
         if [HPXML::ResidentialTypeApartment].include? args['geometry_unit_type'] # MF
           cfa = args['geometry_unit_cfa'] * n_du # building cfa
           if Float(args['geometry_num_floors_above_grade'].to_s) <= 3
