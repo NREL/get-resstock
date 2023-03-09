@@ -38,4 +38,8 @@ class Constants
   def self.Auto
     return 'auto'
   end
+
+  def self.Title24
+    return 'title24'
+  end
 end
