@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>bfced1dc-8f7a-4fda-8ce1-e015946d91ef</version_id>
-  <version_modified>20230310T193544Z</version_modified>
+  <version_id>c54fb9fb-9578-4a61-b519-8083fc855ac9</version_id>
+  <version_modified>20230310T210833Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -4642,8 +4642,9 @@
       <description>E.g., 'auto'.</description>
       <type>String</type>
       <units>W</units>
-      <required>false</required>
+      <required>true</required>
       <model_dependent>false</model_dependent>
+      <default_value>6000</default_value>
     </argument>
     <argument>
       <name>battery_capacity</name>
@@ -4651,8 +4652,9 @@
       <description>E.g., 'auto'.</description>
       <type>String</type>
       <units>kWh</units>
-      <required>false</required>
+      <required>true</required>
       <model_dependent>false</model_dependent>
+      <default_value>10</default_value>
     </argument>
     <argument>
       <name>vintage</name>
@@ -5132,7 +5134,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>3C9F6602</checksum>
+      <checksum>46D3F518</checksum>
     </file>
   </files>
 </measure>

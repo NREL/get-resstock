@@ -79,17 +79,19 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     args << arg
 
     # Adds a battery_power argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
-    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_power', false)
+    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_power', true)
     arg.setDisplayName('Battery: Rated Power Output')
     arg.setDescription("E.g., '#{Constants.Auto}'.")
     arg.setUnits('W')
+    arg.setDefaultValue('6000')
     args << arg
 
-    # Adds a battery_power argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
-    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_capacity', false)
+    # Adds a battery_capacity argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
+    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_capacity', true)
     arg.setDisplayName('Battery: Nominal Capacity')
     arg.setDescription("E.g., '#{Constants.Auto}'.")
     arg.setUnits('kWh')
+    arg.setDefaultValue('10')
     args << arg
 
     arg = OpenStudio::Measure::OSArgument.makeStringArgument('vintage', false)
@@ -473,13 +475,40 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     end
 
     # Battery
-    if args['battery_present']
-      if args['battery_power'] == Constants.Title24
+    if args['pv_system_present'] && args['battery_present']
+      if (args['battery_power'] == Constants.Title24) || (args['battery_capacity'] == Constants.Title24)
+        if args['cec_climate_zone'].is_initialized
+          args['cec_climate_zone'] = args['cec_climate_zone'].get
+        else
+          runner.registerError("ResStockArguments: CEC Climate Zone must be defined for #{Constants.Title24}.")
+          return false
+        end
 
-      end
+        pv_system_max_power_output = args['pv_system_max_power_output'] / 1000.0 # kW
+        if ((args['geometry_unit_type'] == HPXML::ResidentialTypeApartment) && (Float(args['geometry_num_floors_above_grade'].to_s) > 3)) # MF 4+
+          # Section 170.2(h)
+          if args['battery_power'] == Constants.Title24
+            c = 0.26
 
-      if args['battery_capacity'] == Constants.Title24
+            args['battery_power'] = pv_system_max_power_output * c
+            args['battery_power'] *= 1000.0 # W
+          end
 
+          if args['battery_capacity'] == Constants.Title24
+            b = 1.03
+            d = 0.925 # Based on Tesla Powerwall round trip efficiency (new)
+
+            args['battery_capacity'] = pv_system_max_power_output * b / (d**0.5)
+
+            if args['battery_capacity'] < 10.0
+              args['battery_present'] = false
+              args['battery_capacity'] = Constants.Auto
+            end
+          end
+        else
+          runner.registerError("ResStockArguments: #{Constants.Title24} not defined for #{args['geometry_unit_type']} with #{args['geometry_num_floors_above_grade']} floor(s).")
+          return false
+        end
       end
     end
 
