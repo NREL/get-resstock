@@ -81,6 +81,11 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     arg.setDescription('The building vintage, used for informational purposes only.')
     args << arg
 
+    arg = OpenStudio::Measure::OSArgument.makeIntegerArgument('cec_climate_zone', false)
+    arg.setDisplayName('Climate Zone: CEC')
+    arg.setDescription('The CEC climate zone.')
+    args << arg
+
     arg = OpenStudio::Measure::OSArgument.makeDoubleArgument('exterior_finish_r', true)
     arg.setDisplayName('Building Construction: Exterior Finish R-Value')
     arg.setUnits('h-ft^2-R/Btu')
