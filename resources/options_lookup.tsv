@@ -1343,22 +1343,22 @@ Census Division RECS	South Atlantic
 Census Division RECS	West North Central																										
 Census Division RECS	West South Central																										
 CEC Climate Zone	None																										
-CEC Climate Zone	1																										
-CEC Climate Zone	2																										
-CEC Climate Zone	3																										
-CEC Climate Zone	4																										
-CEC Climate Zone	5																										
-CEC Climate Zone	6																										
-CEC Climate Zone	7																										
-CEC Climate Zone	8																										
-CEC Climate Zone	9																										
-CEC Climate Zone	10																										
-CEC Climate Zone	11																										
-CEC Climate Zone	12																										
-CEC Climate Zone	13																										
-CEC Climate Zone	14																										
-CEC Climate Zone	15																										
-CEC Climate Zone	16																										
+CEC Climate Zone	1	ResStockArguments	cec_climate_zone=1																								
+CEC Climate Zone	2	ResStockArguments	cec_climate_zone=2																								
+CEC Climate Zone	3	ResStockArguments	cec_climate_zone=3																								
+CEC Climate Zone	4	ResStockArguments	cec_climate_zone=4																								
+CEC Climate Zone	5	ResStockArguments	cec_climate_zone=5																								
+CEC Climate Zone	6	ResStockArguments	cec_climate_zone=6																								
+CEC Climate Zone	7	ResStockArguments	cec_climate_zone=7																								
+CEC Climate Zone	8	ResStockArguments	cec_climate_zone=8																								
+CEC Climate Zone	9	ResStockArguments	cec_climate_zone=9																								
+CEC Climate Zone	10	ResStockArguments	cec_climate_zone=10																								
+CEC Climate Zone	11	ResStockArguments	cec_climate_zone=11																								
+CEC Climate Zone	12	ResStockArguments	cec_climate_zone=12																								
+CEC Climate Zone	13	ResStockArguments	cec_climate_zone=13																								
+CEC Climate Zone	14	ResStockArguments	cec_climate_zone=14																								
+CEC Climate Zone	15	ResStockArguments	cec_climate_zone=15																								
+CEC Climate Zone	16	ResStockArguments	cec_climate_zone=16																								
 Census Region	Midwest																										
 Census Region	Northeast																										
 Census Region	South																										
