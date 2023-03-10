@@ -480,7 +480,11 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
             b = { 1 => 1.27, 2 => 1.22, 3 => 1.12, 4 => 1.21, 5 => 1.06, 6 => 1.23, 7 => 1.15, 8 => 1.37, 9 => 1.36, 10 => 1.41, 11 => 1.44, 12 => 1.4, 13 => 1.51, 14 => 1.26, 15 => 1.47, 16 => 1.22 }[args['cec_climate_zone']]
 
             args['pv_system_max_power_output'] = (cfa * a) / 1000.0 + (n_du * b) # kW
-            args['pv_system_max_power_output'] *= 1000.0 # W
+
+            if args['pv_system_max_power_output'] < 1.8
+              args['pv_system_present'] = false
+              args['pv_system_max_power_output'] = 0
+            end
           else # 4+
             # Section 170.2(g)
             a = { 1 => 1.82, 2 => 2.21, 3 => 1.82, 4 => 2.21, 5 => 1.82, 6 => 2.21, 7 => 2.21, 8 => 2.21, 9 => 2.21, 10 => 2.21, 11 => 2.21, 12 => 2.21, 13 => 2.21, 14 => 2.21, 15 => 2.77, 16 => 1.82 }[args['cec_climate_zone']]
