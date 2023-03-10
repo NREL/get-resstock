@@ -40,6 +40,8 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
 
       # Following are arguments with the same name but different options
       next if arg.name == 'geometry_unit_cfa'
+      next if arg.name == 'battery_power'
+      next if arg.name == 'battery_capacity'
 
       # Convert optional arguments to string arguments that allow Constants.Auto for defaulting
       if !arg.required
@@ -74,6 +76,20 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     arg.setDescription("E.g., '2000' or '#{Constants.Auto}'.")
     arg.setUnits('sqft')
     arg.setDefaultValue('2000')
+    args << arg
+
+    # Adds a battery_power argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
+    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_power', false)
+    arg.setDisplayName('Battery: Rated Power Output')
+    arg.setDescription("E.g., '#{Constants.Auto}'.")
+    arg.setUnits('W')
+    args << arg
+
+    # Adds a battery_power argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
+    arg = OpenStudio::Measure::OSArgument::makeStringArgument('battery_capacity', false)
+    arg.setDisplayName('Battery: Nominal Capacity')
+    arg.setDescription("E.g., '#{Constants.Auto}'.")
+    arg.setUnits('kWh')
     args << arg
 
     arg = OpenStudio::Measure::OSArgument.makeStringArgument('vintage', false)
@@ -454,6 +470,17 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
       args['pv_system_num_bedrooms_served'] = Integer(args['geometry_unit_num_bedrooms'])
     else
       args['pv_system_num_bedrooms_served'] = 0
+    end
+
+    # Battery
+    if args['battery_present']
+      if args['battery_power'] == Constants.Title24
+
+      end
+
+      if args['battery_capacity'] == Constants.Title24
+
+      end
     end
 
     # Setpoints

@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>fb96ec0d-7396-495d-ad32-9314c65ede05</version_id>
-  <version_modified>20230310T192044Z</version_modified>
+  <version_id>bfced1dc-8f7a-4fda-8ce1-e015946d91ef</version_id>
+  <version_modified>20230310T193544Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -3066,20 +3066,6 @@
       <model_dependent>false</model_dependent>
     </argument>
     <argument>
-      <name>battery_power</name>
-      <display_name>battery_power</display_name>
-      <type>String</type>
-      <required>false</required>
-      <model_dependent>false</model_dependent>
-    </argument>
-    <argument>
-      <name>battery_capacity</name>
-      <display_name>battery_capacity</display_name>
-      <type>String</type>
-      <required>false</required>
-      <model_dependent>false</model_dependent>
-    </argument>
-    <argument>
       <name>battery_usable_capacity</name>
       <display_name>battery_usable_capacity</display_name>
       <type>String</type>
@@ -4651,6 +4637,24 @@
       <default_value>2000</default_value>
     </argument>
     <argument>
+      <name>battery_power</name>
+      <display_name>Battery: Rated Power Output</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>W</units>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+    </argument>
+    <argument>
+      <name>battery_capacity</name>
+      <display_name>Battery: Nominal Capacity</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>kWh</units>
+      <required>false</required>
+      <model_dependent>false</model_dependent>
+    </argument>
+    <argument>
       <name>vintage</name>
       <display_name>Building Construction: Vintage</display_name>
       <description>The building vintage, used for informational purposes only.</description>
@@ -5128,7 +5132,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>46558750</checksum>
+      <checksum>3C9F6602</checksum>
     </file>
   </files>
 </measure>
