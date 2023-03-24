@@ -469,6 +469,9 @@ Windows	"Triple, Low-E, Non-metal, Air, L-Gain"	ResStockArguments	window_ufactor
 Windows	"Triple, Low-E, Insulated, Argon, H-Gain"	ResStockArguments	window_ufactor=0.18	window_shgc=0.40	skylight_ufactor=0.37	skylight_shgc=0.3																					
 Windows	"Triple, Low-E, Insulated, Argon, L-Gain"	ResStockArguments	window_ufactor=0.17	window_shgc=0.27	skylight_ufactor=0.37	skylight_shgc=0.3																					
 Windows	No Windows	ResStockArguments	window_ufactor=0.84	window_shgc=0.63	skylight_ufactor=0.37	skylight_shgc=0.3																					
+Windows	"Title 24, CZ 1"	ResStockArguments	window_ufactor=0.30	window_shgc=0.35	skylight_ufactor=0.37	skylight_shgc=0.3																					
+Windows	"Title 24, CZ 7-8"	ResStockArguments	window_ufactor=0.34	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																					
+Windows	"Title 24, CZ 2-3-4-5-6-9-10-11-12-13-14-15-16"	ResStockArguments	window_ufactor=0.30	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																					
 Storm Windows	Clear	ResStockArguments	window_storm_type=clear																								
 Storm Windows	Low-E	ResStockArguments	window_storm_type=low-e																								
 Doors	Wood	ResStockArguments	door_rvalue=2.1																								
