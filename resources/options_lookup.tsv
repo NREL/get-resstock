@@ -439,6 +439,12 @@ Insulation Wall	"SIP, 9.4 in EPS Core, OSB int."	ResStockArguments	wall_type=Str
 Insulation Wall	"SIP, 9.4 in EPS Core, Gypsum int."	ResStockArguments	wall_type=StructuralInsulatedPanel	wall_assembly_r=35.8																							
 Insulation Wall	"ICF, 2-in EPS, 4-in Concrete, 2-in EPS"	ResStockArguments	wall_type=InsulatedConcreteForms	wall_assembly_r=20.4																							
 Insulation Wall	"ICF, 2-in EPS, 12-in Concrete, 2-in EPS"	ResStockArguments	wall_type=InsulatedConcreteForms	wall_assembly_r=22.5																							
+Insulation Wall	"Brick, Uninsulated, Title 24 CZ 1-12"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=4																							
+Insulation Wall	"Brick, 3-wythe, R-1.5, Title 24 CZ 2-3-4-5-10"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=1.5																							
+Insulation Wall	"Brick, 3-wythe, R-1.4, Title 24 CZ 6-7-8-9"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=1.4																							
+Insulation Wall	"Brick, 3-wythe, R-4.7, Title 24 CZ 13"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=4.7																							
+Insulation Wall	"Brick, 3-wythe, R-5.4, Title 24 CZ 11-14-15"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=5.4																							
+Insulation Wall	"Brick, 3-wythe, R-6.2, Title 24 CZ 16"	ResStockArguments	wall_type=StructuralBrick	wall_assembly_r=6.2																							
 Insulation Wall	"CMU, 6 in Hollow, Uninsulated, Title 24 CZ 1-12"	ResStockArguments	wall_type=InsulatedConcreteForms	wall_assembly_r=4																							
 Insulation Wall	"CMU, R-1.5, Title 24 CZ 2-3-4-5-10"	ResStockArguments	wall_type=InsulatedConcreteForms	wall_assembly_r=1.5																							
 Insulation Wall	"CMU, R-1.4, Title 24 CZ 6-7-8-9"	ResStockArguments	wall_type=InsulatedConcreteForms	wall_assembly_r=1.4																							
