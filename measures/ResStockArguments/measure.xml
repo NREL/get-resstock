@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>fb96ec0d-7396-495d-ad32-9314c65ede05</version_id>
-  <version_modified>20230310T192044Z</version_modified>
+  <version_id>07930a9f-8717-4bcd-8ba9-534f08e63db9</version_id>
+  <version_modified>20230504T231329Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -1591,15 +1591,6 @@
       </choices>
     </argument>
     <argument>
-      <name>heat_pump_heating_efficiency</name>
-      <display_name>Heat Pump: Heating Efficiency</display_name>
-      <description>The rated heating efficiency value of the heat pump.</description>
-      <type>Double</type>
-      <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>7.7</default_value>
-    </argument>
-    <argument>
       <name>heat_pump_cooling_efficiency_type</name>
       <display_name>Heat Pump: Cooling Efficiency Type</display_name>
       <description>The cooling efficiency type of heat pump. System types air-to-air and mini-split use SEER or SEER2. System types ground-to-air, packaged terminal heat pump and room air conditioner with reverse cycle use EER.</description>
@@ -1625,15 +1616,6 @@
           <display_name>CEER</display_name>
         </choice>
       </choices>
-    </argument>
-    <argument>
-      <name>heat_pump_cooling_efficiency</name>
-      <display_name>Heat Pump: Cooling Efficiency</display_name>
-      <description>The rated cooling efficiency value of the heat pump.</description>
-      <type>Double</type>
-      <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>13</default_value>
     </argument>
     <argument>
       <name>heat_pump_cooling_compressor_type</name>
@@ -4855,6 +4837,24 @@
       <default_value>0</default_value>
     </argument>
     <argument>
+      <name>heat_pump_heating_efficiency</name>
+      <display_name>Heat Pump: Heating Efficiency</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>7.7</default_value>
+    </argument>
+    <argument>
+      <name>heat_pump_cooling_efficiency</name>
+      <display_name>Heat Pump: Cooling Efficiency</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>13.0</default_value>
+    </argument>
+    <argument>
       <name>hvac_control_heating_weekday_setpoint_temp</name>
       <display_name>Heating Setpoint: Weekday Temperature</display_name>
       <description>Specify the weekday heating setpoint temperature.</description>
@@ -5128,7 +5128,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>46558750</checksum>
+      <checksum>32A50290</checksum>
     </file>
   </files>
 </measure>
