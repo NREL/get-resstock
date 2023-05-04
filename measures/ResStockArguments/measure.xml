@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>c54fb9fb-9578-4a61-b519-8083fc855ac9</version_id>
-  <version_modified>20230310T210833Z</version_modified>
+  <version_id>b8415b27-aed5-44c4-ae77-a44c71b24af6</version_id>
+  <version_modified>20230504T233314Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -4637,26 +4637,6 @@
       <default_value>2000</default_value>
     </argument>
     <argument>
-      <name>battery_power</name>
-      <display_name>Battery: Rated Power Output</display_name>
-      <description>E.g., 'auto'.</description>
-      <type>String</type>
-      <units>W</units>
-      <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>6000</default_value>
-    </argument>
-    <argument>
-      <name>battery_capacity</name>
-      <display_name>Battery: Nominal Capacity</display_name>
-      <description>E.g., 'auto'.</description>
-      <type>String</type>
-      <units>kWh</units>
-      <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>10</default_value>
-    </argument>
-    <argument>
       <name>vintage</name>
       <display_name>Building Construction: Vintage</display_name>
       <description>The building vintage, used for informational purposes only.</description>
@@ -5105,6 +5085,26 @@
       <required>false</required>
       <model_dependent>false</model_dependent>
     </argument>
+    <argument>
+      <name>battery_power</name>
+      <display_name>Battery: Rated Power Output</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>W</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>4500</default_value>
+    </argument>
+    <argument>
+      <name>battery_capacity</name>
+      <display_name>Battery: Nominal Capacity</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>kWh</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>10</default_value>
+    </argument>
   </arguments>
   <outputs />
   <provenances />
@@ -5134,7 +5134,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>46D3F518</checksum>
+      <checksum>08B51F15</checksum>
     </file>
   </files>
 </measure>
