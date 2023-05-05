@@ -506,9 +506,6 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
         runner.registerError("ResStockArguments: #{Constants.Title24} not defined for #{args['geometry_unit_type']} with #{args['geometry_num_floors_above_grade']} floor(s).")
         return false
       end
-    else
-      args['battery_power'] = Float(args['battery_power'])
-      args['battery_capacity'] = Float(args['battery_capacity'])
     end
 
     # Setpoints
