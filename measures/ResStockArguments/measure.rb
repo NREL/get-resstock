@@ -40,8 +40,6 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
 
       # Following are arguments with the same name but different options
       next if arg.name == 'geometry_unit_cfa'
-      next if arg.name == 'heat_pump_heating_efficiency'
-      next if arg.name == 'heat_pump_cooling_efficiency'
 
       # Convert optional arguments to string arguments that allow Constants.Auto for defaulting
       if !arg.required
@@ -197,20 +195,6 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     arg.setDisplayName('Plug Loads: Vehicle Usage Multiplier 2')
     arg.setDescription('Additional multiplier on the electric vehicle energy usage that can reflect, e.g., high/low usage occupants.')
     arg.setDefaultValue(0.0)
-    args << arg
-
-    # Adds a heat_pump_heating_efficiency argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
-    arg = OpenStudio::Measure::OSArgument::makeStringArgument('heat_pump_heating_efficiency', true)
-    arg.setDisplayName('Heat Pump: Heating Efficiency')
-    arg.setDescription("E.g., '#{Constants.Auto}'.")
-    arg.setDefaultValue('7.7')
-    args << arg
-
-    # Adds a heat_pump_cooling_efficiency argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
-    arg = OpenStudio::Measure::OSArgument::makeStringArgument('heat_pump_cooling_efficiency', true)
-    arg.setDisplayName('Heat Pump: Cooling Efficiency')
-    arg.setDescription("E.g., '#{Constants.Auto}'.")
-    arg.setDefaultValue('13.0')
     args << arg
 
     arg = OpenStudio::Measure::OSArgument::makeDoubleArgument('hvac_control_heating_weekday_setpoint_temp', true)
@@ -470,30 +454,6 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
       args['pv_system_num_bedrooms_served'] = Integer(args['geometry_unit_num_bedrooms'])
     else
       args['pv_system_num_bedrooms_served'] = 0
-    end
-
-    # Heat Pump
-    if (args['heat_pump_heating_efficiency'] == Constants.Title24) && (args['heat_pump_cooling_efficiency'] == Constants.Title24)
-      if args['cec_climate_zone'].is_initialized
-        args['cec_climate_zone'] = args['cec_climate_zone'].get
-      else
-        runner.registerError("ResStockArguments: CEC Climate Zone must be defined for #{Constants.Title24}.")
-        return false
-      end
-
-      if [1, 2, 3, 4, 5].include?(args['cec_climate_zone'])
-        args['heat_pump_heating_efficiency'] = 8.7
-        args['heat_pump_cooling_efficiency'] = 17.0
-      elsif [6, 7, 8, 9, 10].include?(args['cec_climate_zone'])
-        args['heat_pump_heating_efficiency'] = 9.3
-        args['heat_pump_cooling_efficiency'] = 18.0
-      else
-        args['heat_pump_heating_efficiency'] = 10.0
-        args['heat_pump_cooling_efficiency'] = 22.0
-      end
-    else
-      args['heat_pump_heating_efficiency'] = Float(args['heat_pump_heating_efficiency'])
-      args['heat_pump_cooling_efficiency'] = Float(args['heat_pump_cooling_efficiency'])
     end
 
     # Setpoints
