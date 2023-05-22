@@ -1220,6 +1220,7 @@ Battery	10 kWh	ResStockArguments	battery_present=true	battery_location=auto	batt
 Battery	"20 kWh, Outside"	ResStockArguments	battery_present=true	battery_location=outside	battery_power=auto	battery_capacity=auto	battery_usable_capacity=auto	battery_round_trip_efficiency=auto																			
 Battery	"20 kWh, Garage"	ResStockArguments	battery_present=true	battery_location=garage	battery_power=auto	battery_capacity=auto	battery_usable_capacity=auto	battery_round_trip_efficiency=auto																			
 Battery	"20 kWh, 80% Round Trip Efficiency"	ResStockArguments	battery_present=true	battery_location=auto	battery_power=auto	battery_capacity=auto	battery_usable_capacity=auto	battery_round_trip_efficiency=0.8																			
+Battery	"Calculated kWDC kWh, Title 24"	ResStockArguments	battery_present=true	battery_location=auto	battery_power=title24	battery_capacity=title24	battery_usable_capacity=auto	battery_round_trip_efficiency=auto																			
 AHS Region	"CBSA Atlanta-Sandy Springs-Roswell, GA"																										
 AHS Region	"CBSA Boston-Cambridge-Newton, MA-NH"																										
 AHS Region	"CBSA Chicago-Naperville-Elgin, IL-IN-WI"																										
