@@ -3,8 +3,8 @@
   <schema_version>3.0</schema_version>
   <name>server_directory_cleanup</name>
   <uid>ec7d04ad-0b7b-495b-825a-e1b6d28d1d3f</uid>
-  <version_id>4b0712df-0a36-456e-82f4-7a71dd5475e2</version_id>
-  <version_modified>20230522T220509Z</version_modified>
+  <version_id>1c6a5d97-4f23-4bbe-bde9-28dd57fdb45d</version_id>
+  <version_modified>20230522T220835Z</version_modified>
   <xml_checksum>5F1EDF75</xml_checksum>
   <class_name>ServerDirectoryCleanup</class_name>
   <display_name>Server Directory Cleanup</display_name>
