@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>f6c67355-cbf7-4d3d-98b3-a0e67562ddd3</version_id>
-  <version_modified>2023-05-30T20:17:26Z</version_modified>
+  <version_id>a0ab1332-437b-45ca-8177-8a2d54608e02</version_id>
+  <version_modified>2023-05-30T20:27:42Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -2950,16 +2950,6 @@
       <default_value>RoofPitch</default_value>
     </argument>
     <argument>
-      <name>pv_system_max_power_output</name>
-      <display_name>PV System: Maximum Power Output</display_name>
-      <description>Maximum power output of the PV system. For a shared system, this is the total building maximum power output.</description>
-      <type>Double</type>
-      <units>W</units>
-      <required>true</required>
-      <model_dependent>false</model_dependent>
-      <default_value>4000</default_value>
-    </argument>
-    <argument>
       <name>pv_system_inverter_efficiency</name>
       <display_name>pv_system_inverter_efficiency</display_name>
       <type>String</type>
@@ -4662,6 +4652,16 @@
       <default_value>2000</default_value>
     </argument>
     <argument>
+      <name>pv_system_max_power_output</name>
+      <display_name>PV System: Maximum Power Output</display_name>
+      <description>E.g., '4000' or 'auto'.</description>
+      <type>String</type>
+      <units>W</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>4000</default_value>
+    </argument>
+    <argument>
       <name>vintage</name>
       <display_name>Building Construction: Vintage</display_name>
       <description>The building vintage, used for informational purposes only.</description>
@@ -5133,7 +5133,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>1310606E</checksum>
+      <checksum>CC0B4073</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>
