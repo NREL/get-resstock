@@ -40,6 +40,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
 
       # Following are arguments with the same name but different options
       next if arg.name == 'geometry_unit_cfa'
+      next if arg.name == 'pv_system_max_power_output'
       next if arg.name == 'battery_power'
       next if arg.name == 'battery_capacity'
 
@@ -76,6 +77,14 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     arg.setDescription("E.g., '2000' or '#{Constants.Auto}'.")
     arg.setUnits('sqft')
     arg.setDefaultValue('2000')
+    args << arg
+
+    # Adds a pv_system_max_power_output argument similar to the BuildResidentialHPXML measure, but as a string with "auto" allowed
+    arg = OpenStudio::Measure::OSArgument::makeStringArgument('pv_system_max_power_output', true)
+    arg.setDisplayName('PV System: Maximum Power Output')
+    arg.setDescription("E.g., '4000' or '#{Constants.Auto}'.")
+    arg.setUnits('W')
+    arg.setDefaultValue('4000')
     args << arg
 
     arg = OpenStudio::Measure::OSArgument.makeStringArgument('vintage', false)
@@ -467,6 +476,39 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     # PV
     if args[:pv_system_module_type] != 'none'
       args[:pv_system_num_bedrooms_served] = Integer(args[:geometry_unit_num_bedrooms])
+
+      if args[:pv_system_max_power_output] == Constants.Title24
+        if args[:cec_climate_zone].is_initialized
+          args[:cec_climate_zone] = args[:cec_climate_zone].get
+        else
+          runner.registerError("ResStockArguments: CEC Climate Zone must be defined for #{Constants.Title24}.")
+          return false
+        end
+
+        n_du = Float(args[:geometry_building_num_units].to_s)
+        args[:pv_system_num_bedrooms_served] *= n_du
+        cfa = args[:geometry_unit_cfa] * n_du # building cfa
+        if [HPXML::ResidentialTypeSFD, HPXML::ResidentialTypeSFA].include?(args[:geometry_unit_type]) || ((args[:geometry_unit_type] == HPXML::ResidentialTypeApartment) && (Float(args[:geometry_num_floors_above_grade].to_s) <= 3)) # SF or MF low-rise
+          # Section 170.2(f)
+          a = { 1 => 0.793, 2 => 0.621, 3 => 0.628, 4 => 0.586, 5 => 0.585, 6 => 0.594, 7 => 0.572, 8 => 0.586, 9 => 0.613, 10 => 0.627, 11 => 0.836, 12 => 0.613, 13 => 0.894, 14 => 0.741, 15 => 1.56, 16 => 0.59 }[args[:cec_climate_zone]]
+          b = { 1 => 1.27, 2 => 1.22, 3 => 1.12, 4 => 1.21, 5 => 1.06, 6 => 1.23, 7 => 1.15, 8 => 1.37, 9 => 1.36, 10 => 1.41, 11 => 1.44, 12 => 1.4, 13 => 1.51, 14 => 1.26, 15 => 1.47, 16 => 1.22 }[args[:cec_climate_zone]]
+
+          args[:pv_system_max_power_output] = (cfa * a) / 1000.0 + (n_du * b) # kW
+
+          if args[:pv_system_max_power_output] < 1.8
+            args[:pv_system_present] = false
+            args[:pv_system_max_power_output] = 0
+          end
+        else # MF 4+
+          # Section 170.2(g)
+          a = { 1 => 1.82, 2 => 2.21, 3 => 1.82, 4 => 2.21, 5 => 1.82, 6 => 2.21, 7 => 2.21, 8 => 2.21, 9 => 2.21, 10 => 2.21, 11 => 2.21, 12 => 2.21, 13 => 2.21, 14 => 2.21, 15 => 2.77, 16 => 1.82 }[args[:cec_climate_zone]]
+
+          args[:pv_system_max_power_output] = (cfa * a) / 1000.0 # kW
+        end
+        args[:pv_system_max_power_output] *= 1000.0 # W
+      else
+        args[:pv_system_max_power_output] = Float(args[:pv_system_max_power_output])
+      end
     else
       args[:pv_system_num_bedrooms_served] = 0
     end
