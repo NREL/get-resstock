@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>res_stock_arguments</name>
   <uid>c984bb9e-4ac4-4930-a399-9d23f8f6936a</uid>
-  <version_id>a0ab1332-437b-45ca-8177-8a2d54608e02</version_id>
-  <version_modified>2023-05-30T20:27:42Z</version_modified>
+  <version_id>81ca31de-3f68-422f-855b-e729575727ba</version_id>
+  <version_modified>2023-05-31T17:08:53Z</version_modified>
   <xml_checksum>2C38F48B</xml_checksum>
   <class_name>ResStockArguments</class_name>
   <display_name>ResStock Arguments</display_name>
@@ -3060,20 +3060,6 @@
       <model_dependent>false</model_dependent>
     </argument>
     <argument>
-      <name>battery_power</name>
-      <display_name>battery_power</display_name>
-      <type>String</type>
-      <required>false</required>
-      <model_dependent>false</model_dependent>
-    </argument>
-    <argument>
-      <name>battery_capacity</name>
-      <display_name>battery_capacity</display_name>
-      <type>String</type>
-      <required>false</required>
-      <model_dependent>false</model_dependent>
-    </argument>
-    <argument>
       <name>battery_usable_capacity</name>
       <display_name>battery_usable_capacity</display_name>
       <type>String</type>
@@ -5110,6 +5096,26 @@
       <required>false</required>
       <model_dependent>false</model_dependent>
     </argument>
+    <argument>
+      <name>battery_power</name>
+      <display_name>Battery: Rated Power Output</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>W</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>4500</default_value>
+    </argument>
+    <argument>
+      <name>battery_capacity</name>
+      <display_name>Battery: Nominal Capacity</display_name>
+      <description>E.g., 'auto'.</description>
+      <type>String</type>
+      <units>kWh</units>
+      <required>true</required>
+      <model_dependent>false</model_dependent>
+      <default_value>10</default_value>
+    </argument>
   </arguments>
   <outputs />
   <provenances />
@@ -5133,7 +5139,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>CC0B4073</checksum>
+      <checksum>805FCCE6</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>
