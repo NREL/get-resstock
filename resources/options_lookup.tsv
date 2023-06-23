@@ -342,7 +342,7 @@ Insulation Roof	"Finished, R-19"	ResStockArguments	roof_assembly_r=21.2
 Insulation Roof	"Finished, R-30"	ResStockArguments	roof_assembly_r=29.7																							
 Insulation Roof	"Finished, R-38"	ResStockArguments	roof_assembly_r=36.5																							
 Insulation Roof	"Finished, R-49"	ResStockArguments	roof_assembly_r=47.0																							
-Insulation Roof	"Finished, R-25"	ResStockArguments	roof_assembly_r=25.6																							
+Insulation Roof	"Finished, R-25.6"	ResStockArguments	roof_assembly_r=25.6																							
 Insulation Roof	"Finished, R-29.4"	ResStockArguments	roof_assembly_r=29.4																							
 Insulation Roof	"Finished, R-35.7"	ResStockArguments	roof_assembly_r=35.7																							
 Radiant Barrier	Yes	ResStockArguments	roof_radiant_barrier=true	roof_radiant_barrier_grade=1																						
