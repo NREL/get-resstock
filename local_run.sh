@@ -8,4 +8,4 @@
 echo "Running on $SLURM_JOB_NUM_NODES nodes: $SLURM_NODELIST"
 module load conda
 conda activate /shared-projects/buildstock/envs/buildstock-2023.05.0/
-buildstock_eagle project_CA/CA_baseline.yml
+openstudio workflow/run_analysis.rb -y project_CA/CA_baseline.yml -k -o
