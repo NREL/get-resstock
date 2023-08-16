@@ -368,6 +368,7 @@ Roof Material	Galvanized Steel	ResStockArguments	roof_material_type=metal surfac
 Roof Material	"Tile, Clay or Ceramic"	ResStockArguments	roof_material_type=slate or tile shingles	roof_color=medium																						
 Roof Material	"Tile, Clay or Ceramic, White or Cool Colors"	ResStockArguments	roof_material_type=slate or tile shingles	roof_color=reflective																						
 Roof Material	Wood Shingles	ResStockArguments	roof_material_type=wood shingles or shakes	roof_color=medium																						
+Roof Material	"Wood Shingles, White or Cool Colors"	ResStockArguments	roof_material_type=wood shingles or shakes	roof_color=reflective																						
 Roof Material	Composition Shingles	ResStockArguments	roof_material_type=asphalt or fiberglass shingles	roof_color=medium																						
 Roof Material	"Composition Shingles, White or Cool Colors"	ResStockArguments	roof_material_type=asphalt or fiberglass shingles	roof_color=reflective																						
 Roof Material	"Tile, Concrete"	ResStockArguments	roof_material_type=slate or tile shingles	roof_color=medium																						
@@ -492,6 +493,8 @@ Windows	No Windows	ResStockArguments	window_ufactor=0.84	window_shgc=0.63	skylig
 Windows	U 0.30 SHGC 0.35	ResStockArguments	window_ufactor=0.3	window_shgc=0.35	skylight_ufactor=0.37	skylight_shgc=0.3																				
 Windows	U 0.34 SHGC 0.23	ResStockArguments	window_ufactor=0.34	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																				
 Windows	U 0.30 SHGC 0.23	ResStockArguments	window_ufactor=0.3	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																				
+Windows	U 0.28 SHGC 0.35	ResStockArguments	window_ufactor=0.28	window_shgc=0.35	skylight_ufactor=0.37	skylight_shgc=0.3																				
+Windows	U 0.28 SHGC 0.23	ResStockArguments	window_ufactor=0.28	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																				
 Storm Windows	Clear	ResStockArguments	window_storm_type=clear																							
 Storm Windows	Low-E	ResStockArguments	window_storm_type=low-e																							
 Doors	Wood	ResStockArguments	door_rvalue=2.1																							
@@ -1098,6 +1101,7 @@ Misc Gas Lighting	Gas Lighting	ResStockArguments	misc_fuel_loads_lighting_presen
 Misc Hot Tub Spa	None	ResStockArguments	hot_tub_present=false	hot_tub_pump_annual_kwh=0	hot_tub_pump_usage_multiplier=0	hot_tub_heater_type=none	hot_tub_heater_annual_kwh=0	hot_tub_heater_annual_therm=0	hot_tub_heater_usage_multiplier=0																	
 Misc Hot Tub Spa	Electric	ResStockArguments	hot_tub_present=true	hot_tub_pump_annual_kwh=auto	hot_tub_pump_usage_multiplier=1.0	hot_tub_heater_type=electric resistance	hot_tub_heater_annual_kwh=auto	hot_tub_heater_annual_therm=0	hot_tub_heater_usage_multiplier=1.0																	
 Misc Hot Tub Spa	Gas	ResStockArguments	hot_tub_present=true	hot_tub_pump_annual_kwh=auto	hot_tub_pump_usage_multiplier=1.0	hot_tub_heater_type=gas fired	hot_tub_heater_annual_kwh=0	hot_tub_heater_annual_therm=auto	hot_tub_heater_usage_multiplier=1.0																	
+Misc Hot Tub Spa	Heat Pump	ResStockArguments	hot_tub_present=true	hot_tub_pump_annual_kwh=auto	hot_tub_pump_usage_multiplier=1.0	hot_tub_heater_type=heat pump	hot_tub_heater_annual_kwh=auto	hot_tub_heater_annual_therm=0	hot_tub_heater_usage_multiplier=1.0																	
 Misc Pool	None	ResStockArguments	pool_present=false																							
 Misc Pool	Has Pool	ResStockArguments	pool_present=true																							
 Misc Pool Heater	None	ResStockArguments	pool_heater_type=none	pool_heater_annual_kwh=0	pool_heater_annual_therm=0	pool_heater_usage_multiplier=0																				
