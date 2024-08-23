@@ -343,42 +343,28 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     if bldg_data['Water Heater In Unit'] == 'No'
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
-      if bldg_data['Water Heater Efficiency'].include?('Natural Gas Heat Pump')
-        shared_water_heater_type = Constants.WaterHeaterTypeHeatPump
-      elsif bldg_data['Water Heater Efficiency'].include?('Natural Gas Standard') || bldg_data['Water Heater Efficiency'].include?('Natural Gas Premium')
-        shared_water_heater_type = Constants.WaterHeaterTypeBoiler
-      end
+      water_heater_efficiency = bldg_data['Water Heater Efficiency']
+      hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
+      hvac_heating_type_and_fuel = bldg_data['HVAC Heating Type And Fuel']
 
-      if shared_water_heater_type.include?('storage')
-        if bldg_data['Water Heater Fuel'].include?('Electricity')
-          shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
-        elsif bldg_data['Water Heater Fuel'].include?('Natural Gas')
-          shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
-        elsif bldg_data['Water Heater Fuel'].include?('Fuel Oil')
-          shared_water_heater_fuel_type = HPXML::FuelTypeOil
-        elsif bldg_data['Water Heater Fuel'].include?('Propane')
-          shared_water_heater_fuel_type = HPXML::FuelTypePropane
-        elsif bldg_data['Water Heater Fuel'].include?('Other Fuel')
-          shared_water_heater_fuel_type = HPXML::FuelTypeWoodCord
-        end
-      end
-
-      if bldg_data['HVAC Heating Type And Fuel'] == 'Natural Gas Shared Heating'
-        if bldg_data['HVAC Shared Efficiencies'].include?('Natural Gas Heat Pump')
-          shared_water_heater_type = Constants.WaterHeaterTypeCombiHeatPump
-        elsif bldg_data['HVAC Shared Efficiencies'].include?('Boiler') || bldg_data['HVAC Shared Efficiencies'].include?('Fan Coil')
-          shared_water_heater_type = Constants.WaterHeaterTypeCombiBoiler
-        end
-
-        if shared_water_heater_type.include?('space-heating')
-          if bldg_data['HVAC Heating Type And Fuel'].include?('Electricity')
-            shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
-          elsif bldg_data['HVAC Heating Type And Fuel'].include?('Natural Gas')
-            shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
-          elsif bldg_data['HVAC Heating Type And Fuel'].include?('Fuel Oil')
-            shared_water_heater_fuel_type = HPXML::FuelTypeOil
+      if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium') || water_heater_efficiency.include?('Natural Gas Heat Pump')
+        if hvac_shared_efficiencies == 'None'
+          if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium')
+            shared_water_heater_type = Constants.WaterHeaterTypeBoiler
+          elsif water_heater_efficiency.include?('Natural Gas Heat Pump')
+            shared_water_heater_type = Constants.WaterHeaterTypeHeatPump
+          end
+        elsif hvac_heating_type_and_fuel == 'Natural Gas Shared Heating'
+          if hvac_shared_efficiencies.include?('Boiler') || hvac_shared_efficiencies.include?('Fan Coil')
+            shared_water_heater_type = Constants.WaterHeaterTypeCombiBoiler
+          elsif hvac_shared_efficiencies.include?('Natural Gas Heat Pump')
+            shared_water_heater_type = Constants.WaterHeaterTypeCombiHeatPump
           end
         end
+      end
+
+      if [Constants.WaterHeaterTypeBoiler, Constants.WaterHeaterTypeHeatPump, Constants.WaterHeaterTypeCombiBoiler, Constants.WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
+        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
       end
     end
 
