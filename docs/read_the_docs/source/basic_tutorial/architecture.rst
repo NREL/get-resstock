@@ -22,11 +22,15 @@ See :doc:`run_project` for more information about running ResStock analyses.
 Sampling
 --------
    
-To run the sampling script yourself, from the command line execute, e.g. ``openstudio resources/run_sampling.rb -p project_national -n 10000 -o buildstock.csv``, and a file ``buildstock.csv`` will be created in the ``resources`` directory.
+To run the sampling script yourself, from the command line execute, e.g. ``openstudio resources/run_sampling.rb -p project_national -n 10000 -o buildstock.csv``, and a ``buildstock.csv`` file will be created in the ``resources`` directory.
+
+If a custom ``buildstock.csv`` file is referenced using the `precomputed sampler <https://buildstockbatch.readthedocs.io/en/stable/samplers/precomputed.html>`_ when you run the project, it will be used as the basis for generating simulation datapoints.
+Alternatively by using other (non-precomputed) quota-based samplers, the sampling will be run automatically to create a ``buildstock.csv`` file.
+For each simulation datapoint, the workflow will then look up its building description from the sampled ``buildstock.csv`` file.
  
-If a custom ``buildstock.csv`` file is located in a project's ``housing_characteristics`` directory when you run the project, it will automatically be used to generate simulations. If it’s not found, the sampling will be run automatically to create one. For each datapoint, the measure will then look up its building description from the sampled csv.
- 
-You can use this manual sampling process to downselect which simulations you want to run. For example, you can use the command above to generate a ``buildstock.csv`` for the entire U.S. and then open up this file in Excel and delete all of the rows that you don't want to simulate (e.g., all rows that aren't in New York). Keep in mind that if you do this, you will need to re-enumerate the "Building" column as "1" through the number of rows.
+You can use this manual sampling process to downselect which simulations you want to run.
+For example, you can use the command above to generate a ``buildstock.csv`` for the entire U.S. and then open up this file in Excel and delete all of the rows that you don't want to simulate (e.g., all rows that aren't in New York).
+Keep in mind that if you do this, you will need to re-enumerate the "Building" column as "1" through the number of rows.
 
 Measures
 --------
@@ -40,13 +44,12 @@ The following depicts the order in which workflow measure steps are applied:
   1     BuildExistingModel            Model              No        Meta measure  ResStock
   2     ApplyUpgrade                  Model              Yes [#]_  Meta measure  ResStock
   3     HPXMLtoOpenStudio             Model              No                      OS-HPXML [#]_
-  4     *Other Model Measures*        Model              Yes                     Any [#]_
-  5     ReportSimulationOutput        Reporting          No                      OS-HPXML
-  6     ReportHPXMLOutput             Reporting          No                      ResStock
+  4     UpgradeCosts                  Model              No                      ResStock
+  5     *Other Model Measures*        Model              Yes                     Any [#]_
+  6     ReportSimulationOutput        Reporting          No                      OS-HPXML
   7     ReportUtilityBills            Reporting          No                      OS-HPXML
-  8     UpgradeCosts                  Reporting          No                      ResStock
-  9     *Other Reporting Measures*    Reporting          Yes                     Any [#]_
-  10    ServerDirectoryCleanup        Reporting          No                      ResStock
+  8     *Other Reporting Measures*    Reporting          Yes                     Any [#]_
+  9     ServerDirectoryCleanup        Reporting          No                      ResStock
   ===== ============================= ================== ========= ============= ==========================
 
  .. [#] Baseline models with no upgrades do not have the ApplyUpgrade measure applied.
@@ -63,6 +66,8 @@ The BuildExistingModel and ApplyUpgrade meta measures call the following model m
   2     BuildResidentialHPXML         Model              No                      OS-HPXML
   3     BuildResidentialScheduleFile  Model              No                      OS-HPXML
   ===== ============================= ================== ========= ============= ==========================
+
+.. _model-measures:
 
 Model Measures
 **************
@@ -146,6 +151,16 @@ They contribute to the generation of the model.
 
   See also `OpenStudio-HPXML Workflow Inputs <https://openstudio-hpxml.readthedocs.io/en/latest/workflow_inputs.html>`_ for documentation on workflow inputs.
 
+**UpgradeCosts**
+
+  .. include:: ../../../../measures/UpgradeCosts/measure.xml
+     :start-after: <description>
+     :end-before: <
+
+  .. include:: ../../../../measures/UpgradeCosts/measure.xml
+     :start-after: <modeler_description>
+     :end-before: <
+
 **Other Model Measures**
 
   Additional model measures can be optionally applied to the workflow.
@@ -167,16 +182,6 @@ They process and report simulation output.
      :start-after: <modeler_description>
      :end-before: <
 
-**ReportHPXMLOutput**
-
-  .. include:: ../../../../measures/ReportHPXMLOutput/measure.xml
-     :start-after: <description>
-     :end-before: <
-
-  .. include:: ../../../../measures/ReportHPXMLOutput/measure.xml
-     :start-after: <modeler_description>
-     :end-before: <
-
 **ReportUtilityBills**
 
   .. include:: ../../../../resources/hpxml-measures/ReportUtilityBills/measure.xml
@@ -184,16 +189,6 @@ They process and report simulation output.
      :end-before: <
 
   .. include:: ../../../../resources/hpxml-measures/ReportUtilityBills/measure.xml
-     :start-after: <modeler_description>
-     :end-before: <
-
-**UpgradeCosts**
-
-  .. include:: ../../../../measures/UpgradeCosts/measure.xml
-     :start-after: <description>
-     :end-before: <
-
-  .. include:: ../../../../measures/UpgradeCosts/measure.xml
      :start-after: <modeler_description>
      :end-before: <
 
@@ -206,4 +201,8 @@ They process and report simulation output.
 
   .. include:: ../../../../measures/ServerDirectoryCleanup/measure.xml
      :start-after: <description>
+     :end-before: <
+
+  .. include:: ../../../../measures/ServerDirectoryCleanup/measure.xml
+     :start-after: <modeler_description>
      :end-before: <
