@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Constants
+class Constants
   # Strings --------------------
 
   def self.ObjectNameSharedWaterHeater

@@ -2725,13 +2725,13 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
       elsif object.to_FanSystemModel.is_initialized || object.to_FanOnOff.is_initialized
         if object_type == Constants.ObjectNameWaterHeater
           return { [FT::Elec, EUT::HotWater] => ["Fan #{EPlus::FuelTypeElectricity} Energy"] }
-        elsif object_type == 'shared water heater'
-          return { [FT::Elec, EUT::HotWater] => ["Pump #{EPlus::FuelTypeElectricity} Energy"] }
         end
 
       elsif object.to_PumpConstantSpeed.is_initialized
         if object_type == Constants.ObjectNameSolarHotWater
           return { [FT::Elec, EUT::HotWaterSolarThermalPump] => ["Pump #{EPlus::FuelTypeElectricity} Energy"] }
+        elsif object_type == 'shared water heater'
+          return { [FT::Elec, EUT::HotWater] => ["Pump #{EPlus::FuelTypeElectricity} Energy"] }
         end
 
       elsif object.to_WaterHeaterMixed.is_initialized
