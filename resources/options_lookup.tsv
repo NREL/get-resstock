@@ -10068,7 +10068,7 @@ Insulation Ceiling	None	ResStockArguments	ceiling_assembly_r=0	ceiling_insulatio
 Insulation Ceiling	R-13	ResStockArguments	ceiling_assembly_r=14.6	ceiling_insulation_r=13
 Insulation Ceiling	R-19	ResStockArguments	ceiling_assembly_r=20.6	ceiling_insulation_r=19
 Insulation Ceiling	R-30	ResStockArguments	ceiling_assembly_r=31.6	ceiling_insulation_r=30
-Insulation Ceiling	R-33	ResStockArguments ceiling_assembly_r=34.4	ceiling_insulation_r=33
+Insulation Ceiling	R-33	ResStockArguments	ceiling_assembly_r=34.4	ceiling_insulation_r=33
 Insulation Ceiling	R-38	ResStockArguments	ceiling_assembly_r=39.6	ceiling_insulation_r=38
 Insulation Ceiling	R-41	ResStockArguments ceiling_assembly_r=42.5	ceiling_insulation_r=41
 Insulation Ceiling	R-49	ResStockArguments	ceiling_assembly_r=50.6	ceiling_insulation_r=49
