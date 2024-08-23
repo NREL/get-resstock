@@ -282,6 +282,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
+    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou']
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
