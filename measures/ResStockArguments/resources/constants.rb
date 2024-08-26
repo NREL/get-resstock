@@ -100,4 +100,8 @@ class Constants
     # list of resstock arguments; reported as build_existing_model.<argument_name>, ...
     return []
   end
+
+  def self.Title24
+    return 'title24'
+  end
 end
