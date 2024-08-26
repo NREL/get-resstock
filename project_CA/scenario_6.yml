@@ -11,7 +11,7 @@ weather_files_url: https://data.nrel.gov/system/files/156/Buildstock_TMY3_FIPS-1
 sampler:
   type: precomputed
   args:
-    sample_file: 2029-ghpwh.csv
+    sample_file: 2029-gaseff.csv
 
 workflow_generator:
   type: residential_hpxml

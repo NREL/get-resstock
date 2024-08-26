@@ -352,12 +352,24 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         if hvac_shared_efficiencies == 'None'
           if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium')
             shared_water_heater_type = Constants.WaterHeaterTypeBoiler
+
+            shared_boiler_efficiency_afue = 0.78
+            if water_heater_efficiency.end_with?('Premium')
+              shared_boiler_efficiency_afue = 0.80
+            elsif water_heater_efficiency.end_with?('Premium, Condensing')
+              shared_boiler_efficiency_afue = 0.9
+            end
           elsif water_heater_efficiency.include?('Natural Gas Heat Pump')
             shared_water_heater_type = Constants.WaterHeaterTypeHeatPump
           end
         elsif hvac_heating_type_and_fuel == 'Natural Gas Shared Heating'
+          shared_boiler_efficiency_afue = 0.78
           if hvac_shared_efficiencies.include?('Boiler') || hvac_shared_efficiencies.include?('Fan Coil')
             shared_water_heater_type = Constants.WaterHeaterTypeCombiBoiler
+
+            if hvac_shared_efficiencies.end_with?('AFUE 90%')
+              shared_boiler_efficiency_afue = 0.9
+            end
           elsif hvac_shared_efficiencies.include?('Natural Gas Heat Pump')
             shared_water_heater_type = Constants.WaterHeaterTypeCombiHeatPump
           end
@@ -437,10 +449,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         additional_properties << "#{arg_name}=#{arg_value}"
       end
       additional_properties << "geometry_building_num_units=#{geometry_building_num_units}" # Used by ReportSimulationOutput and ReportUtilityBills reporting measure
-      additional_properties << "geometry_num_floors_above_grade=#{geometry_num_floors_above_grade}" # Used by AddSharedWaterHeater reporting measure
-      additional_properties << "geometry_corridor_position=#{['Double-Loaded Interior', 'Double Exterior'].include?(geometry_corridor_position)}" # Used by AddSharedWaterHeater reporting measure
-      additional_properties << "shared_water_heater_type=#{shared_water_heater_type}" # Used by AddSharedWaterHeater reporting measure
-      additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater reporting measure
+      additional_properties << "geometry_num_floors_above_grade=#{geometry_num_floors_above_grade}" # Used by AddSharedWaterHeater measure
+      additional_properties << "geometry_corridor_position=#{['Double-Loaded Interior', 'Double Exterior'].include?(geometry_corridor_position)}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_water_heater_type=#{shared_water_heater_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version

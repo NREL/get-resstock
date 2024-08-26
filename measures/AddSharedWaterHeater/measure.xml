@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>add_shared_water_heater</name>
   <uid>1bae0fb1-c46b-4521-8c32-06de67bdeee8</uid>
-  <version_id>cf976bf8-27c1-4f4a-a7ea-36ed0961634a</version_id>
-  <version_modified>2024-08-23T17:45:41Z</version_modified>
+  <version_id>ce655281-04d0-4df1-b0c6-f94eaf176b5d</version_id>
+  <version_modified>2024-08-26T22:56:50Z</version_modified>
   <xml_checksum>8DB48FFA</xml_checksum>
   <class_name>AddSharedWaterHeater</class_name>
   <display_name>AddSharedWaterHeater</display_name>
@@ -38,7 +38,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>3E24E9A0</checksum>
+      <checksum>80E4FB6D</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>

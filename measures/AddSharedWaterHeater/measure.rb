@@ -50,6 +50,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     has_double_loaded_corridor = hpxml_bldg.header.extension_properties['geometry_corridor_position']
     shared_water_heater_type = hpxml_bldg.header.extension_properties['shared_water_heater_type']
     shared_water_heater_fuel_type = hpxml_bldg.header.extension_properties['shared_water_heater_fuel_type']
+    shared_boiler_efficiency_afue = hpxml_bldg.header.extension_properties['shared_boiler_efficiency_afue'].to_f
 
     # Skip measure if no shared heating system
     if shared_water_heater_type == 'none'
@@ -98,7 +99,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     water_heating_capacity = get_total_water_heating_capacity(model)
     space_heating_capacity = get_total_space_heating_capacity(model)
     water_heating_tank_volume = get_total_water_heating_tank_volume(model)
-    boiler_efficiency_curve = get_boiler_efficiency_curve(model)
 
     if shared_water_heater_type == Constants.WaterHeaterTypeBoiler
       supply_count = 1
@@ -302,13 +302,13 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Space Heating Component
     if shared_water_heater_type == Constants.WaterHeaterTypeCombiHeatPump
-      component = add_component(model, 'boiler', shared_water_heater_fuel_type, space_heating_loop, "#{space_heating_loop.name} Space Heater", space_heating_capacity, boiler_efficiency_curve)
+      component = add_component(model, 'boiler', shared_water_heater_fuel_type, space_heating_loop, "#{space_heating_loop.name} Space Heater", space_heating_capacity, shared_boiler_efficiency_afue)
       component.addToNode(space_heating_hx.supplyOutletModelObject.get.to_Node.get)
     end
 
     # Add Supply Components
     supply_loops.each do |supply_loop, components|
-      component = add_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", supply_capacity, boiler_efficiency_curve)
+      component = add_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", supply_capacity, shared_boiler_efficiency_afue)
 
       # Curves
       if component.to_HeatPumpAirToWaterFuelFiredHeating.is_initialized
@@ -764,11 +764,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     return hx
   end
 
-  def add_component(model, system_type, fuel_type, supply_loop, name, capacity, boiler_eff_curve)
+  def add_component(model, system_type, fuel_type, supply_loop, name, capacity, boiler_eff_afue)
     if system_type.include?('boiler')
       component = OpenStudio::Model::BoilerHotWater.new(model)
       component.setName(name)
-      component.setNominalThermalEfficiency(0.78)
+      component.setNominalThermalEfficiency(boiler_eff_afue)
       component.setNominalCapacity(capacity)
       component.setFuelType(EPlus.fuel_type(fuel_type))
       component.setMinimumPartLoadRatio(0.0)
@@ -779,6 +779,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       component.setOnCycleParasiticElectricLoad(0)
       # component.setDesignWaterFlowRate() # FIXME
       component.setEfficiencyCurveTemperatureEvaluationVariable('LeavingBoiler')
+      boiler_eff_curve = create_curve_bicubic(model, [1.111720116, 0.078614078, -0.400425756, 0.0, -0.000156783, 0.009384599, 0.234257955, 1.32927e-06, -0.004446701, -1.22498e-05], 'NonCondensingBoilerEff', 0.1, 1.0, 20.0, 80.0)
       component.setNormalizedBoilerEfficiencyCurve(boiler_eff_curve)
       component.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
       return component if system_type == Constants.WaterHeaterTypeCombiHeatPump
@@ -1178,12 +1179,24 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     return UnitConversions.convert(total_water_heating_tank_volume, 'm^3', 'gal')
   end
 
-  def get_boiler_efficiency_curve(model)
-    model.getBoilerHotWaters.each do |boiler|
-      curve = boiler.normalizedBoilerEfficiencyCurve.get
-      curve.setName('Non Condensing Boiler Efficiency Curve')
-      return curve
-    end
+  def create_curve_bicubic(model, coeff, name, min_x, max_x, min_y, max_y)
+    curve = OpenStudio::Model::CurveBicubic.new(model)
+    curve.setName(name)
+    curve.setCoefficient1Constant(coeff[0])
+    curve.setCoefficient2x(coeff[1])
+    curve.setCoefficient3xPOW2(coeff[2])
+    curve.setCoefficient4y(coeff[3])
+    curve.setCoefficient5yPOW2(coeff[4])
+    curve.setCoefficient6xTIMESY(coeff[5])
+    curve.setCoefficient7xPOW3(coeff[6])
+    curve.setCoefficient8yPOW3(coeff[7])
+    curve.setCoefficient9xPOW2TIMESY(coeff[8])
+    curve.setCoefficient10xTIMESYPOW2(coeff[9])
+    curve.setMinimumValueofx(min_x)
+    curve.setMaximumValueofx(max_x)
+    curve.setMinimumValueofy(min_y)
+    curve.setMaximumValueofy(max_y)
+    return curve
   end
 end
 
