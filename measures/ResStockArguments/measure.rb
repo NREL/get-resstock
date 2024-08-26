@@ -512,7 +512,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     end
 
     # PV
-    if args[:pv_system_present] == 'true'
+    if args[:pv_system_present]
       args[:pv_system_num_bedrooms_served] = args[:geometry_unit_num_bedrooms]
 
       if args[:pv_system_max_power_output] == Constants.Title24
@@ -550,7 +550,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     end
 
     # Battery
-    if args[:battery_present] == 'true'
+    if args[:battery_present]
       args[:battery_num_bedrooms_served] = args[:geometry_unit_num_bedrooms]
 
       if (args[:battery_power] == Constants.Title24) || (args[:battery_capacity] == Constants.Title24)
@@ -885,7 +885,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     measure_arguments.each do |arg|
       arg_name = arg.name.to_sym
       value = args[arg_name]
-      next if value.nil? || (value == Constants.Auto)
+      next if value.nil? || (value == Constants.Auto) || (value == Constants.Title24)
 
       case arg.type.valueName.downcase
       when 'double'
