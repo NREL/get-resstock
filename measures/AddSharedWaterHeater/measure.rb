@@ -930,7 +930,10 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # Actuators
-    ems_actuator_to_remove = ['water heater ec adj']
+    ems_actuator_to_remove = [
+      'water heater ec adj',
+      'solar hot water pump'
+    ]
     ems_actuator_to_remove += [
       'boiler hydronic pump'
     ] if shared_water_heater_type.include?('space-heating')
