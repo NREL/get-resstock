@@ -364,7 +364,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
           end
         elsif hvac_heating_type_and_fuel == 'Natural Gas Shared Heating'
           shared_boiler_efficiency_afue = 0.78
-          if hvac_shared_efficiencies.include?('Boiler') || hvac_shared_efficiencies.include?('Fan Coil')
+          if hvac_shared_efficiencies.include?('Boiler')
             shared_water_heater_type = Constants.WaterHeaterTypeCombiBoiler
 
             if hvac_shared_efficiencies.end_with?('90% AFUE')

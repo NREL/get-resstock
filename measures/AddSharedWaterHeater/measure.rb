@@ -88,12 +88,13 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Right now we have single tank for boiler and x 80 gal tanks in series for HP
     storage_tank_volume = 80.0
 
-    # why is the inlet temp so high?
-    # look at loop types in os-resources?
-    # look at boiler vs gahp curves?
-    # try removing the swing tank?
-    # compare plant loop volumes
-    # storage tank max temp limit
+    # Questions/TODOs:
+    # - why is the inlet temp so high?
+    # - look at loop types in os-resources?
+    # - look at boiler vs gahp curves?
+    # - try removing the swing tank?
+    # - compare plant loop volumes
+    # - storage tank max temp limit
 
     # Get existing capacities
     water_heating_capacity = get_total_water_heating_capacity(model)
@@ -107,6 +108,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     elsif shared_water_heater_type == Constants.WaterHeaterTypeHeatPump
       # supply_count *= 2
       supply_capacity = 36194
+
+      # FIXME
+      supply_count_max = 10
+      storage_tank_volume *= 2 if supply_count > supply_count_max # otherwise E+ error: Change over rate is too fast, increase tank volume, decrease connection flow rates or use mixed tank model
+      supply_count = [supply_count, supply_count_max].min
     elsif shared_water_heater_type == Constants.WaterHeaterTypeCombiBoiler
       supply_count = 1
       supply_capacity = 3 * (water_heating_capacity + space_heating_capacity) # FIXME
@@ -114,6 +120,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     elsif shared_water_heater_type == Constants.WaterHeaterTypeCombiHeatPump
       supply_count *= 2 # FIXME
       supply_capacity = 36194
+
+      # FIXME
+      supply_count_max = 20
+      storage_tank_volume *= 6 if supply_count > supply_count_max # otherwise E+ error: Change over rate is too fast, increase tank volume, decrease connection flow rates or use mixed tank model
+      supply_count = [supply_count, supply_count_max].min
     end
 
     # Swing tank volume
@@ -661,7 +672,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2Capacity(capacity)
+    ###
     setpoint = 180.0 # FIXME
+    ###
     setpoint_schedule = OpenStudio::Model::ScheduleConstant.new(model)
     setpoint_schedule.setName("#{name} Temperature #{setpoint.round}F")
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
@@ -680,7 +693,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
     # storage_tank.setSkinLossFractiontoZone(1.0 / unit_multiplier) # Tank losses are multiplied by E+ zone multiplier, so need to compensate here
     # storage_tank.setOffCycleFlueLossFractiontoZone(1.0 / unit_multiplier)
-    # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
+    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
     # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(140, 'F', 'C')) # FIXME
     if supply_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
       storage_tank.setHeaterThermalEfficiency(1.0)
