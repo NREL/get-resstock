@@ -256,6 +256,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       supply_loops[supply_loop] = []
     end
     source_loop = add_loop(model, 'Source Loop', source_loop_sp, loop_temp_diff, source_loop_gpm)
+    if swing_tank_volume > 0.0
+      swing_loop = add_loop(model, 'Swing Loop', source_loop_sp, loop_temp_diff, source_loop_gpm)
+    end
 
     # Add Adiabatic Pipes
     dhw_loop_demand_inlet, dhw_loop_demand_bypass = add_adiabatic_pipes(model, dhw_loop)
@@ -266,43 +269,39 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       _heat_pump_loop_demand_inlet, _heat_pump_loop_demand_bypass = add_adiabatic_pipes(model, supply_loop)
     end
     _source_loop_demand_inlet, _source_loop_demand_bypass = add_adiabatic_pipes(model, source_loop)
+    _swing_loop_demand_inlet, _swing_loop_demand_bypass = add_adiabatic_pipes(model, swing_loop)
 
     # Add Indoor Pipes
     add_indoor_pipes(model, dhw_loop_demand_inlet, dhw_loop_demand_bypass, supply_length, return_length, supply_pipe_ins_r_value, return_pipe_ins_r_value, num_units)
 
     # Add Pumps
     add_pump(model, dhw_loop, dhw_loop_gpm, 1, 0)
-    if shared_water_heater_type.include?('space-heating')
-      # add_pump(model, space_heating_loop, space_heating_pump_gpm)
-      add_pump(model, space_heating_loop, space_heating_pump_gpm, pump_head, pump_w)
-    end
+    add_pump(model, space_heating_loop, space_heating_pump_gpm, pump_head, pump_w)
     supply_loops.each do |supply_loop, _|
-      # add_pump(model, supply_loop, supply_pump_gpm)
       add_pump(model, supply_loop, supply_pump_gpm, pump_head, pump_w)
     end
-    # add_pump(model, source_loop, source_pump_gpm)
     add_pump(model, source_loop, source_pump_gpm, pump_head, pump_w)
+    add_pump(model, swing_loop, source_pump_gpm, pump_head, pump_w)
 
     # Add Setpoint Managers
     add_setpoint_manager(model, dhw_loop, dhw_loop_sp_schedule)
-    if shared_water_heater_type.include?('space-heating')
-      add_setpoint_manager(model, space_heating_loop, space_heating_loop_sp_schedule)
-    end
+    add_setpoint_manager(model, space_heating_loop, space_heating_loop_sp_schedule)
     supply_loops.each do |supply_loop, _|
       add_setpoint_manager(model, supply_loop, supply_loop_sp_schedule)
     end
     add_setpoint_manager(model, source_loop, source_loop_sp_schedule)
+    add_setpoint_manager(model, swing_loop, source_loop_sp_schedule)
 
     # Add Tanks
     prev_storage_tank = nil
     supply_loops.each do |supply_loop, components|
-      storage_tank = add_storage_tank(model, source_loop, supply_loop, storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, supply_loop_sp)
+      storage_tank = add_storage_tank(model, source_loop, swing_loop, supply_loop, storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, supply_loop_sp)
       storage_tank.additionalProperties.setFeature('ObjectType', Constants.ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
       prev_storage_tank = components[0]
     end
-    swing_tank = add_swing_tank(model, prev_storage_tank, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, supply_loop_sp)
+    swing_tank = add_swing_tank(model, source_loop, swing_loop, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, supply_loop_sp)
     swing_tank.additionalProperties.setFeature('ObjectType', Constants.ObjectNameSharedWaterHeater) if !swing_tank.nil? # Used by reporting measure
 
     # Add Heat Exchangers
@@ -433,6 +432,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
   end
 
   def add_adiabatic_pipes(model, loop)
+    return if loop.nil?
+
     # Supply
     supply_bypass = OpenStudio::Model::PipeAdiabatic.new(model)
     supply_bypass.setName('Supply Bypass Pipe')
@@ -649,13 +650,15 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
   end
 
   def add_setpoint_manager(model, loop, schedule)
+    return if loop.nil?
+
     manager = OpenStudio::Model::SetpointManagerScheduled.new(model, schedule)
     manager.setName("#{loop.name} Setpoint Manager #{UnitConversions.convert(schedule.value, 'C', 'F').round}F")
     manager.setControlVariable('Temperature')
     manager.addToNode(loop.supplyOutletNode)
   end
 
-  def add_storage_tank(model, source_loop, supply_loop, volume, prev_storage_tank, name, fuel_type, setpoint)
+  def add_storage_tank(model, source_loop, swing_loop, supply_loop, volume, prev_storage_tank, name, fuel_type, setpoint)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -705,7 +708,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     if prev_storage_tank.nil?
-      source_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
+      if swing_loop.nil?
+        source_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
+      else
+        swing_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
+      end
     else
       storage_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
     end
@@ -716,7 +723,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     return storage_tank
   end
 
-  def add_swing_tank(model, last_storage_tank, volume, capacity, name, fuel_type, setpoint)
+  def add_swing_tank(model, source_loop, swing_loop, volume, capacity, name, fuel_type, setpoint)
     return if volume == 0
 
     # this would be in series with the main storage tanks, downstream of it
@@ -760,8 +767,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     swing_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
     # swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
 
-    swing_tank.addToNode(last_storage_tank.useSideOutletModelObject.get.to_Node.get) # in series
-    # swing_tank.addToNode(source_loop.supplyOutletNode)
+    source_loop.addSupplyBranchForComponent(swing_tank)
+    swing_loop.addDemandBranchForComponent(swing_tank)
 
     return swing_tank
   end
