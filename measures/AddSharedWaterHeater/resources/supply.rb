@@ -9,9 +9,11 @@ class Supply
       # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
       # FIXME: How to adjust size when used for space heating?
       supply_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
+      supply_count += 1 # FIXME: min 2
 
       if type.include?(Constant::SpaceHeating)
-        supply_count *= 2
+        # supply_count *= 2
+        supply_count += 1 # FIXME
       end
 
       return supply_count
@@ -37,6 +39,7 @@ class Supply
   end
 
   def self.get_supply_capacity(model, type)
+    # W
     supply_capacity = 0.0
     if type.include?(Constant::Boiler)
       water_heating_capacity = get_total_water_heating_capacity(model)
@@ -47,6 +50,7 @@ class Supply
         space_heating_capacity = get_total_space_heating_capacity(model)
 
         supply_capacity = water_heating_capacity + space_heating_capacity
+        supply_capacity *= 2 # FIXME
       end
     elsif type.include?(Constant::HeatPumpWaterHeater)
       supply_capacity = 36194.0

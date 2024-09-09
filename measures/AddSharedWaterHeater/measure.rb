@@ -92,6 +92,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Pumps
     pump_head = Pumps.get_rated_head(shared_water_heater_type)
     pump_w = Pumps.get_rated_power_consumption(shared_water_heater_type)
+    pump_head = nil # FIXME
+    pump_w = nil # FIXME
 
     # Pipes
     supply_length, return_length = Pipes.get_recirc_supply_return_lengths(hpxml_bldg, num_units, num_stories, has_double_loaded_corridor)
@@ -158,7 +160,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # Add Swing Tank
-    swing_tank_capacity = 1000 # FIXME
+    swing_tank_capacity /= 3 # FIXME
     swing_tank = Tanks.create_swing(model, storage_loop, dhw_loop, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, dhw_loop_sp)
     swing_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) if !swing_tank.nil? # Used by reporting measure
 
@@ -169,7 +171,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Supplemental Space Heating Boiler
     if shared_water_heater_type == Constant::WaterHeaterTypeCombiHeatPump
-      supplemental_heating_capacity = 20000
+      supplemental_heating_capacity = Supply.get_total_space_heating_capacity(model)
+      supplemental_heating_capacity /= 3 # FIXME
       component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, space_heating_loop, "#{space_heating_loop.name} Space Heater", supplemental_heating_capacity, shared_boiler_efficiency_afue, true)
       component.addToNode(space_heating_hx.supplyOutletModelObject.get.to_Node.get)
     end

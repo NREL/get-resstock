@@ -11,24 +11,22 @@ class Tanks
   end
 
   def self.get_storage_volume(model, type, _supply_count)
+    # gal
     if type.include?(Constant::Boiler)
       storage_tank_volume = get_total_water_heating_tank_volume(model)
 
       if type.include?(Constant::SpaceHeating)
-        storage_tank_volume *= 3
-      end
-    elsif type.include?(Constant::HeatPumpWaterHeater)
-      storage_tank_volume = 80.0
-
-      if type.include?(Constant::SpaceHeating)
         storage_tank_volume *= 2
       end
+    elsif type.include?(Constant::HeatPumpWaterHeater)
+      storage_tank_volume = 200.0
     end
 
     return storage_tank_volume
   end
 
   def self.get_swing_volume(type, num_units)
+    # gal
     return 0.0 if type.include?(Constant::Boiler)
 
     if num_units < 8
@@ -64,9 +62,6 @@ class Tanks
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2Capacity(capacity)
-    ###
-    # setpoint = 180.0 # FIXME
-    ###
     setpoint_schedule = OpenStudio::Model::ScheduleConstant.new(model)
     setpoint_schedule.setName("#{name} Temperature #{setpoint.round}F")
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
@@ -86,7 +81,6 @@ class Tanks
     # storage_tank.setSkinLossFractiontoZone(1.0 / unit_multiplier) # Tank losses are multiplied by E+ zone multiplier, so need to compensate here
     # storage_tank.setOffCycleFlueLossFractiontoZone(1.0 / unit_multiplier)
     storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
-    # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(140, 'F', 'C')) # FIXME
     if demand_side_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
       storage_tank.setHeaterThermalEfficiency(1.0)
       storage_tank.setAdditionalDestratificationConductivity(0)
@@ -127,14 +121,12 @@ class Tanks
     swing_tank.setTankHeight(h_tank)
     swing_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     swing_tank.setHeaterPriorityControl('MasterSlave')
-    # capacity = 100 # FIXME
     swing_tank.setHeater1Capacity(capacity)
     swing_tank.setHeater1Height(h_ue)
     swing_tank.setHeater1DeadbandTemperatureDifference(5.56) # 10 F
     swing_tank.setHeater2Capacity(capacity)
     swing_tank.setHeater2Height(h_le)
     swing_tank.setHeater2DeadbandTemperatureDifference(5.56)
-    # setpoint = 150.0 # FIXME
     setpoint_schedule = OpenStudio::Model::ScheduleConstant.new(model)
     setpoint_schedule.setName("#{name} Temperature #{setpoint.round}F")
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
@@ -151,7 +143,7 @@ class Tanks
     # swing_tank.setSourceSideDesignFlowRate() # FIXME
     swing_tank.setEndUseSubcategory(name)
     swing_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
-    # swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
+    swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
 
     supply_side_loop.addSupplyBranchForComponent(swing_tank)
     demand_side_loop.addDemandBranchForComponent(swing_tank)
