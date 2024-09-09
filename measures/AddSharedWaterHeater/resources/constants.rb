@@ -1,25 +1,14 @@
 # frozen_string_literal: true
 
-class Constants
-  # Strings --------------------
+module Constant
+  ObjectNameSharedWaterHeater = 'shared water heater' # Used by reporting measure
 
-  def self.ObjectNameSharedWaterHeater
-    return 'shared water heater'
-  end
+  HeatPumpWaterHeater = 'heat pump water heater'
+  Boiler = 'boiler'
+  SpaceHeating = 'space-heating'
 
-  def self.WaterHeaterTypeHeatPump
-    return 'heat pump water heater with storage and swing tanks'
-  end
-
-  def self.WaterHeaterTypeBoiler
-    return 'boiler with storage tanks'
-  end
-
-  def self.WaterHeaterTypeCombiHeatPump
-    return 'space-heating heat pump water heater with storage and swing tanks'
-  end
-
-  def self.WaterHeaterTypeCombiBoiler
-    return 'space-heating boiler with storage tanks'
-  end
+  WaterHeaterTypeHeatPump = "#{HeatPumpWaterHeater} with storage and swing tanks"
+  WaterHeaterTypeBoiler = "#{Boiler} with storage tanks"
+  WaterHeaterTypeCombiHeatPump = "#{SpaceHeating} #{HeatPumpWaterHeater} with storage and swing tanks"
+  WaterHeaterTypeCombiBoiler = "#{SpaceHeating} #{Boiler} with storage tanks"
 end

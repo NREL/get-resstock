@@ -3,13 +3,13 @@
   <schema_version>3.1</schema_version>
   <name>add_shared_water_heater</name>
   <uid>1bae0fb1-c46b-4521-8c32-06de67bdeee8</uid>
-  <version_id>bf22b6fc-b945-4a43-a62a-e757c9f5aa88</version_id>
-  <version_modified>2024-09-05T22:59:50Z</version_modified>
+  <version_id>0e8d6660-ac98-4f41-b89f-4cb57f1f4cc3</version_id>
+  <version_modified>2024-09-09T21:24:40Z</version_modified>
   <xml_checksum>8DB48FFA</xml_checksum>
   <class_name>AddSharedWaterHeater</class_name>
   <display_name>AddSharedWaterHeater</display_name>
   <description>Replace in-unit water heaters and boilers with shared 'heat pump water heater with storage and swing tanks', 'boiler with storage tanks', 'space-heating heat pump water heater with storage and swing tanks', or 'space-heating boiler with storage tanks'. This measure assumes that water use connections (and optionally baseboards) already exist in the model.</description>
-  <modeler_description>Replace existing hot water loops and associated EMS objects. Add new supply loop(s) with water heating (and optionally space-heating) components on the supply side, and main storage and swing tanks (in series) on the demand side. Add new source (recirculation) loop with main storage and swing tanks on the supply side, and domestic hot water loop heat exchanger (and optionally space-heating loop heat exchanger) on the demand side. Add new domestic how water loop (and optionally space-heating loop) with heat exchanger(s) on the supply side, and water use connections (and optionally baseboards) on the demand side.</modeler_description>
+  <modeler_description>Replace existing in-unit hot water loops and associated EMS objects. Add new shared plant loop(s) with water heating (and optionally space-heating) components, including storage and swing tanks.</modeler_description>
   <arguments />
   <outputs />
   <provenances />
@@ -38,13 +38,61 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>0600D460</checksum>
+      <checksum>767234FB</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>FCEB5EE3</checksum>
+      <checksum>6766524D</checksum>
+    </file>
+    <file>
+      <filename>curves.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>595865B1</checksum>
+    </file>
+    <file>
+      <filename>hxs.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>B5F3578D</checksum>
+    </file>
+    <file>
+      <filename>loops.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>34E7D0DD</checksum>
+    </file>
+    <file>
+      <filename>pipes.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>773362AD</checksum>
+    </file>
+    <file>
+      <filename>pumps.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>79F1D43E</checksum>
+    </file>
+    <file>
+      <filename>setpoints.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>FC609BE7</checksum>
+    </file>
+    <file>
+      <filename>supply.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>359CECAE</checksum>
+    </file>
+    <file>
+      <filename>tanks.rb</filename>
+      <filetype>rb</filetype>
+      <usage_type>resource</usage_type>
+      <checksum>4DCCA419</checksum>
     </file>
   </files>
 </measure>
