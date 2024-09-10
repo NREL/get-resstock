@@ -38,10 +38,9 @@ class Pipes
     return supply_pipe_ins_r_value, return_pipe_ins_r_value
   end
 
-  def self.create_adiabatic(model, loop)
+  def self.create_adiabatic_supply(model, loop)
     return if loop.nil?
 
-    # Supply
     supply_bypass = OpenStudio::Model::PipeAdiabatic.new(model)
     supply_bypass.setName('Supply Bypass Pipe')
     supply_outlet = OpenStudio::Model::PipeAdiabatic.new(model)
@@ -49,8 +48,11 @@ class Pipes
 
     loop.addSupplyBranchForComponent(supply_bypass)
     supply_outlet.addToNode(loop.supplyOutletNode)
+  end
 
-    # Demand
+  def self.create_adiabatic_demand(model, loop)
+    return if loop.nil?
+
     demand_inlet = OpenStudio::Model::PipeAdiabatic.new(model)
     demand_inlet.setName('Demand Inlet Pipe')
     demand_bypass = OpenStudio::Model::PipeAdiabatic.new(model)
@@ -61,8 +63,6 @@ class Pipes
     demand_inlet.addToNode(loop.demandInletNode)
     loop.addDemandBranchForComponent(demand_bypass)
     demand_outlet.addToNode(loop.demandOutletNode)
-
-    return demand_inlet, demand_bypass
   end
 
   def self.calc_recirc_flow_rate(_hpxml_buildings, supply_length, supply_pipe_ins_r_value, volume)
@@ -133,7 +133,7 @@ class Pipes
     return UnitConversions.convert(supply_thickness, 'in', 'm'), UnitConversions.convert(return_thickness, 'in', 'm')
   end
 
-  def self.create_indoor(model, demand_inlet, demand_bypass, supply_length, return_length, supply_pipe_ins_r_value, return_pipe_ins_r_value, num_units)
+  def self.create_indoor(model, supply_length, return_length, supply_pipe_ins_r_value, return_pipe_ins_r_value, num_units)
     # Copper Pipe
     roughness = 'Smooth'
     thickness = 0.003
@@ -162,14 +162,13 @@ class Pipes
     effective_pipe_ins_conductivity = conductivity / (1.0 - pipe_ins_r_value_derate)
 
     # Supply
-    supply_pipe_materials = []
-
     supply_pipe_insulation_material = OpenStudio::Model::StandardOpaqueMaterial.new(model, roughness, supply_thickness, effective_pipe_ins_conductivity, density, specific_heat) # R-6
     supply_pipe_insulation_material.setName('Supply Pipe Insulation')
     supply_pipe_insulation_material.setThermalAbsorptance(0.9)
     supply_pipe_insulation_material.setSolarAbsorptance(0.5)
     supply_pipe_insulation_material.setVisibleAbsorptance(0.5)
 
+    supply_pipe_materials = []
     supply_pipe_materials << supply_pipe_insulation_material
     supply_pipe_materials << copper_pipe_material
 
@@ -178,14 +177,13 @@ class Pipes
     insulated_supply_pipe_construction.setLayers(supply_pipe_materials)
 
     # Return
-    return_pipe_materials = []
-
     return_pipe_insulation_material = OpenStudio::Model::StandardOpaqueMaterial.new(model, roughness, return_thickness, effective_pipe_ins_conductivity, density, specific_heat) # R-4
     return_pipe_insulation_material.setName('Return Pipe Insulation')
     return_pipe_insulation_material.setThermalAbsorptance(0.9)
     return_pipe_insulation_material.setSolarAbsorptance(0.5)
     return_pipe_insulation_material.setVisibleAbsorptance(0.5)
 
+    return_pipe_materials = []
     return_pipe_materials << return_pipe_insulation_material
     return_pipe_materials << copper_pipe_material
 
@@ -194,30 +192,45 @@ class Pipes
     insulated_return_pipe_construction.setLayers(return_pipe_materials)
 
     # Thermal Zones
-    model.getThermalZones.each do |thermal_zone|
-      next if thermal_zone.volume.is_initialized && thermal_zone.volume.get <= 1 # skip the return air plenum zone
+    indoor_pipes = {}
+    model.getWaterUseConnectionss.each do |wuc|
+      thermal_zone = get_thermal_zone_from_water_use_connections(wuc)
 
       # Supply
-      dhw_recirc_supply_pipe = OpenStudio::Model::PipeIndoor.new(model)
-      dhw_recirc_supply_pipe.setName("Recirculation Supply Pipe - #{thermal_zone.name}")
-      dhw_recirc_supply_pipe.setAmbientTemperatureZone(thermal_zone)
-      dhw_recirc_supply_pipe.setConstruction(insulated_supply_pipe_construction)
-      dhw_recirc_supply_pipe.setPipeInsideDiameter(UnitConversions.convert(supply_diameter, 'in', 'm'))
-      # dhw_recirc_supply_pipe.setPipeLength(UnitConversions.convert(supply_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
-      dhw_recirc_supply_pipe.setPipeLength(UnitConversions.convert((supply_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
+      supply_pipe_indoor = OpenStudio::Model::PipeIndoor.new(model)
+      supply_pipe_indoor.setName("Supply Pipe - #{thermal_zone.name}")
+      supply_pipe_indoor.setAmbientTemperatureZone(thermal_zone)
+      supply_pipe_indoor.setConstruction(insulated_supply_pipe_construction)
+      supply_pipe_indoor.setPipeInsideDiameter(UnitConversions.convert(supply_diameter, 'in', 'm'))
+      # supply_pipe_indoor.setPipeLength(UnitConversions.convert(supply_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
+      supply_pipe_indoor.setPipeLength(UnitConversions.convert((supply_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
 
-      dhw_recirc_supply_pipe.addToNode(demand_inlet.outletModelObject.get.to_Node.get) # FIXME: check IDF branches to make sure everything looks ok
+      # supply_pipe_indoor.addToNode(demand_inlet.outletModelObject.get.to_Node.get)
 
       # Return
-      dhw_recirc_return_pipe = OpenStudio::Model::PipeIndoor.new(model)
-      dhw_recirc_return_pipe.setName("Recirculation Return Pipe - #{thermal_zone.name}")
-      dhw_recirc_return_pipe.setAmbientTemperatureZone(thermal_zone)
-      dhw_recirc_return_pipe.setConstruction(insulated_return_pipe_construction)
-      dhw_recirc_return_pipe.setPipeInsideDiameter(UnitConversions.convert(return_diameter, 'in', 'm'))
-      # dhw_recirc_return_pipe.setPipeLength(UnitConversions.convert(return_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
-      dhw_recirc_return_pipe.setPipeLength(UnitConversions.convert((return_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
+      return_pipe_indoor = OpenStudio::Model::PipeIndoor.new(model)
+      return_pipe_indoor.setName("Return Pipe - #{thermal_zone.name}")
+      return_pipe_indoor.setAmbientTemperatureZone(thermal_zone)
+      return_pipe_indoor.setConstruction(insulated_return_pipe_construction)
+      return_pipe_indoor.setPipeInsideDiameter(UnitConversions.convert(return_diameter, 'in', 'm'))
+      # return_pipe_indoor.setPipeLength(UnitConversions.convert(return_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
+      return_pipe_indoor.setPipeLength(UnitConversions.convert((return_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
 
-      dhw_recirc_return_pipe.addToNode(demand_bypass.outletModelObject.get.to_Node.get)
+      # return_pipe_indoor.addToNode(demand_bypass.outletModelObject.get.to_Node.get)
+
+      indoor_pipes[wuc] = [supply_pipe_indoor, return_pipe_indoor]
+    end
+
+    return indoor_pipes
+  end
+
+  def self.get_thermal_zone_from_water_use_connections(wuc)
+    plant_loop = wuc.plantLoop.get
+    plant_loop.supplyComponents.each do |supply_component|
+      next unless supply_component.to_WaterHeaterMixed.is_initialized
+      if supply_component.to_WaterHeaterMixed.get.ambientTemperatureThermalZone.is_initialized
+        return supply_component.to_WaterHeaterMixed.get.ambientTemperatureThermalZone.get
+      end
     end
   end
 end

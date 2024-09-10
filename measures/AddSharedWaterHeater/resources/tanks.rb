@@ -19,7 +19,7 @@ class Tanks
         storage_tank_volume *= 2
       end
     elsif type.include?(Constant::HeatPumpWaterHeater)
-      storage_tank_volume = 200.0
+      storage_tank_volume = 200.0 # FIXME: this is independent of the fixed Robur size; meaning, should be sized
     end
 
     return storage_tank_volume

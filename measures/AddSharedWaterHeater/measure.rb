@@ -98,9 +98,22 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Pipes
     supply_length, return_length = Pipes.get_recirc_supply_return_lengths(hpxml_bldg, num_units, num_stories, has_double_loaded_corridor)
     supply_ins_r, return_ins_r = Pipes.get_recirc_ins_r_value()
+    indoor_pipes = Pipes.create_indoor(model, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
+    # indoor_pipes = nil
 
-    dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # OS-HPXML
-    _dhw_pump_gpm, swing_tank_capacity = Pipes.calc_recirc_flow_rate(hpxml.buildings, supply_length, supply_ins_r, swing_tank_volume)
+    # questions:
+    # - dhw pump gpm autosize because of indoor pipes?
+    # - capacities of:
+    #   - swing tank
+    #   - supplemental boiler
+    # - counts of:
+    #   - gahp
+    # - almost like it's faster to empty/fill the swing tank than to wait on gahp
+    #  - set swing capacity equal to recirc losses? we're already doing this, but i'm cutting capacity down
+    #  - try using dhw_pump_gpm (or autosizing) the DHW loop pump (~1 gal/min may be reasonable)
+
+    dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # OS-HPXML ###
+    dhw_pump_gpm, swing_tank_capacity = Pipes.calc_recirc_flow_rate(hpxml.buildings, supply_length, supply_ins_r, swing_tank_volume)
 
     # Flows
     supply_loop_gpm, storage_loop_gpm, space_heating_loop_gpm = Loops.get_flow_rates(shared_water_heater_type)
@@ -123,18 +136,19 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     space_heating_loop = Loops.create_plant(model, 'Space Heating Loop', space_heating_loop_sp, 20.0, space_heating_loop_gpm) if shared_water_heater_type.include?(Constant::SpaceHeating)
 
     # Add Adiabatic Pipes
-    dhw_loop_demand_inlet, dhw_loop_demand_bypass = Pipes.create_adiabatic(model, dhw_loop)
+    Pipes.create_adiabatic_supply(model, dhw_loop)
+    # Pipes.create_adiabatic_demand(model, dhw_loop)
     supply_loops.each do |supply_loop, _|
-      Pipes.create_adiabatic(model, supply_loop)
+      Pipes.create_adiabatic_supply(model, supply_loop)
+      Pipes.create_adiabatic_demand(model, supply_loop)
     end
-    Pipes.create_adiabatic(model, storage_loop)
-    Pipes.create_adiabatic(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
-
-    # Add Indoor Pipes
-    Pipes.create_indoor(model, dhw_loop_demand_inlet, dhw_loop_demand_bypass, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
+    Pipes.create_adiabatic_supply(model, storage_loop)
+    Pipes.create_adiabatic_demand(model, storage_loop)
+    Pipes.create_adiabatic_supply(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
+    Pipes.create_adiabatic_demand(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
 
     # Add Pumps
-    Pumps.create_constant_speed(model, dhw_loop, dhw_loop_gpm, 1, 0)
+    Pumps.create_constant_speed(model, dhw_loop, dhw_pump_gpm, pump_head, pump_w, 'Continuous')
     supply_loops.each do |supply_loop, _|
       Pumps.create_constant_speed(model, supply_loop, supply_pump_gpm, pump_head, pump_w)
     end
@@ -160,7 +174,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # Add Swing Tank
-    swing_tank_capacity /= 3 # FIXME
+    # swing_tank_capacity /= 3 # FIXME
     swing_tank = Tanks.create_swing(model, storage_loop, dhw_loop, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, dhw_loop_sp)
     swing_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) if !swing_tank.nil? # Used by reporting measure
 
@@ -201,8 +215,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       Setpoints.create_availability(model, supply_loop, hot_node, cold_node)
     end
 
-    # Re-connect WaterUseConections (in series)
-    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop)
+    # Re-connect WaterUseConections (in series) with PipeIndoors
+    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop, indoor_pipes)
 
     # Re-connect CoilHeatingWaterBaseboards (in parallel)
     reconnected_space_heatings = Loops.reconnect_space_water_coils(model, space_heating_loop)

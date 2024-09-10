@@ -17,22 +17,19 @@ class Pumps
     end
   end
 
-  def self.create_constant_speed(model, loop, pump_gpm, pump_head, pump_w)
+  def self.create_constant_speed(model, loop, pump_gpm, pump_head, pump_w, control_type = 'Intermittent')
     return if loop.nil?
-
-    pump_eff = 0.85
 
     pump = OpenStudio::Model::PumpConstantSpeed.new(model)
     pump.setName("#{loop.name} Pump")
-    # pump.setMotorEfficiency(pump_eff)
     pump.setRatedPowerConsumption(pump_w) if !pump_w.nil?
     pump.setRatedPumpHead(pump_head) if !pump_head.nil?
     if pump_gpm.nil?
       # pump.setRatedFlowRate(pump_eff * pump_w / pump_head) if !pump_w.nil? && !pump_head.nil?
     else
       pump.setRatedFlowRate(UnitConversions.convert(pump_gpm, 'gal/min', 'm^3/s')) if !pump_gpm.nil?
-      # pump.setPumpControlType('Continuous') # FIXME
     end
+    pump.setPumpControlType(control_type)
     pump.addToNode(loop.supplyInletNode)
     pump.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
   end

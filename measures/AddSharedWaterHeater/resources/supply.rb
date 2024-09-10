@@ -9,11 +9,10 @@ class Supply
       # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
       # FIXME: How to adjust size when used for space heating?
       supply_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
-      supply_count += 1 # FIXME: min 2
+      supply_count = [2, supply_count].max # FIXME: min 2
 
       if type.include?(Constant::SpaceHeating)
-        # supply_count *= 2
-        supply_count += 1 # FIXME
+        supply_count += 1 # FIXME: add 1 for space heating
       end
 
       return supply_count
