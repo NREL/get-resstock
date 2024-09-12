@@ -101,17 +101,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     indoor_pipes = Pipes.create_indoor(model, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
     # indoor_pipes = nil
 
-    # questions:
-    # - dhw pump gpm autosize because of indoor pipes?
-    # - capacities of:
-    #   - swing tank
-    #   - supplemental boiler
-    # - counts of:
-    #   - gahp
-    # - almost like it's faster to empty/fill the swing tank than to wait on gahp
-    #  - set swing capacity equal to recirc losses? we're already doing this, but i'm cutting capacity down
-    #  - try using dhw_pump_gpm (or autosizing) the DHW loop pump (~1 gal/min may be reasonable)
-
     dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # OS-HPXML ###
     dhw_pump_gpm, swing_tank_capacity = Pipes.calc_recirc_flow_rate(hpxml.buildings, supply_length, supply_ins_r, swing_tank_volume)
 
@@ -163,30 +152,45 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     Setpoints.create_manager(model, storage_loop, storage_loop_sp_schedule)
     Setpoints.create_manager(model, space_heating_loop, space_heating_loop_sp_schedule)
 
+    ### FIXME
+    # hx = OpenStudio::Model::HeatExchangerFluidToFluid.new(model)
+    # hx.setName('Test')
+    hx = nil
+    ###
+
     # Add Storage Tank(s)
     prev_storage_tank = nil
-    supply_loops.each do |supply_loop, components|
+    supply_loops.each_with_index do |(supply_loop, components), i|
       storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, supply_loop_sp)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
       prev_storage_tank = components[0]
+
+      if shared_water_heater_type.include?(Constant::HeatPumpWaterHeater) && i == 0
+        # hx.addToNode(storage_tank.useSideInletModelObject.get.to_Node.get)
+      end
     end
 
     # Add Swing Tank
-    # swing_tank_capacity /= 3 # FIXME
+    swing_tank_capacity /= 2 # FIXME
     swing_tank = Tanks.create_swing(model, storage_loop, dhw_loop, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, dhw_loop_sp)
     swing_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) if !swing_tank.nil? # Used by reporting measure
 
+    if !swing_tank.nil?
+      # hx.addToNode(swing_tank.sourceSideOutletModelObject.get.to_Node.get)
+      # hx.addToNode(swing_tank.useSideInletModelObject.get.to_Node.get)
+    end
+
     # Add Heat Exchangers
-    # HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') # swing and hx in parallel gives us FF use only and no swing tank use...?
+    # HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') # FIXME: this splits cold water to storage/swing tanks?
     HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') if swing_tank.nil?
     space_heating_hx = HeatExchangers.create(model, storage_loop, space_heating_loop, 'Space Heating Heat Exchanger') if shared_water_heater_type.include?(Constant::SpaceHeating)
 
     # Add Supplemental Space Heating Boiler
     if shared_water_heater_type == Constant::WaterHeaterTypeCombiHeatPump
       supplemental_heating_capacity = Supply.get_total_space_heating_capacity(model)
-      supplemental_heating_capacity /= 3 # FIXME
+      supplemental_heating_capacity /= 3.5 # FIXME
       component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, space_heating_loop, "#{space_heating_loop.name} Space Heater", supplemental_heating_capacity, shared_boiler_efficiency_afue, true)
       component.addToNode(space_heating_hx.supplyOutletModelObject.get.to_Node.get)
     end
@@ -216,7 +220,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # Re-connect WaterUseConections (in series) with PipeIndoors
-    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop, indoor_pipes)
+    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop, indoor_pipes, hx, shared_water_heater_type)
 
     # Re-connect CoilHeatingWaterBaseboards (in parallel)
     reconnected_space_heatings = Loops.reconnect_space_water_coils(model, space_heating_loop)
