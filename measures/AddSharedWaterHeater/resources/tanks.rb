@@ -10,7 +10,7 @@ class Tanks
     return UnitConversions.convert(total_water_heating_tank_volume, 'm^3', 'gal')
   end
 
-  def self.get_storage_volume(model, type, _supply_count)
+  def self.get_storage_volume(model, type)
     # gal
     if type.include?(Constant::Boiler)
       storage_tank_volume = get_total_water_heating_tank_volume(model)
@@ -21,13 +21,14 @@ class Tanks
     elsif type.include?(Constant::HeatPumpWaterHeater)
       storage_tank_volume = 200.0 # FIXME: this is independent of the fixed Robur size; meaning, should be sized
     end
+    storage_tank_volume = 120.0 # FIXME
 
     return storage_tank_volume
   end
 
-  def self.get_swing_volume(type, num_units)
+  def self.get_swing_volume(include_swing_tank, num_units)
     # gal
-    return 0.0 if type.include?(Constant::Boiler)
+    return 0.0 if !include_swing_tank
 
     if num_units < 8
       swing_tank_volume = 40.0

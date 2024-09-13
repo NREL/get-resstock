@@ -37,12 +37,14 @@ class Loops
     return supply_loop_gpm, storage_loop_gpm, space_heating_loop_gpm
   end
 
-  def self.reconnect_water_use_connections(model, dhw_loop, indoor_pipes, _hx, type)
+  def self.reconnect_water_use_connections(model, dhw_loop, indoor_pipes)
+    connections_in_series = true # otherwise parallel
+
     prev_wuc = nil
     prev_return_pipe = nil
 
     reconnected_water_heatings = 0
-    model.getWaterUseConnectionss.each_with_index do |wuc, i|
+    model.getWaterUseConnectionss.each_with_index do |wuc, _i|
       wuc.setName("#{wuc.name}_reconnected")
 
       if prev_wuc.nil?
@@ -50,7 +52,7 @@ class Loops
       else
         wuc.addToNode(prev_wuc.outletModelObject.get.to_Node.get)
       end
-      prev_wuc = wuc
+      prev_wuc = wuc if connections_in_series
 
       if !indoor_pipes.nil?
         supply_pipe, return_pipe = indoor_pipes[wuc]
@@ -73,17 +75,13 @@ class Loops
         # prev_return_pipe = return_pipe
 
         # Option 4
-        supply_pipe.addToNode(dhw_loop.demandInletNode)
-        if prev_return_pipe.nil?
-          dhw_loop.addDemandBranchForComponent(return_pipe)
-        else
-          return_pipe.addToNode(prev_return_pipe.outletModelObject.get.to_Node.get)
-        end
-        prev_return_pipe = return_pipe
-      end
-
-      if type.include?(Constant::HeatPumpWaterHeater) && i == 1
-        # hx.addToNode(wuc.outletModelObject.get.to_Node.get)
+        # supply_pipe.addToNode(dhw_loop.demandInletNode)
+        # if prev_return_pipe.nil?
+        # dhw_loop.addDemandBranchForComponent(return_pipe)
+        # else
+        # return_pipe.addToNode(prev_return_pipe.outletModelObject.get.to_Node.get)
+        # end
+        # prev_return_pipe = return_pipe
       end
 
       reconnected_water_heatings += 1

@@ -1,22 +1,24 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_count(type, num_beds, num_units)
+  def self.get_supply_counts(type, num_beds, num_units)
+    boiler_count = 1
     if type.include?(Constant::Boiler)
-      return 1
+      heat_pump_count = 0
     elsif type.include?(Constant::HeatPumpWaterHeater)
       # Calculate some size parameters: number of heat pumps, storage tank volume, number of tanks, swing tank volume
       # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
       # FIXME: How to adjust size when used for space heating?
-      supply_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
-      supply_count = [2, supply_count].max # FIXME: min
+      heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
+      heat_pump_count = [1, heat_pump_count].max # FIXME: min
 
       if type.include?(Constant::SpaceHeating)
-        supply_count += 1 # FIXME
+        heat_pump_count += 0 # FIXME
       end
-
-      return supply_count
+      boiler_count = 0
     end
+
+    return boiler_count, heat_pump_count
   end
 
   def self.get_total_water_heating_capacity(model)
@@ -37,25 +39,26 @@ class Supply
     return total_space_heating_capacity
   end
 
-  def self.get_supply_capacity(model, type)
+  def self.get_supply_capacities(model, type)
     # W
-    supply_capacity = 0.0
+    water_heating_capacity = get_total_water_heating_capacity(model)
+
+    if !type.include?(Constant::SpaceHeating)
+      boiler_capacity = water_heating_capacity
+    else
+      space_heating_capacity = get_total_space_heating_capacity(model)
+
+      boiler_capacity = water_heating_capacity + space_heating_capacity
+      # boiler_capacity *= 2 # FIXME
+    end
     if type.include?(Constant::Boiler)
-      water_heating_capacity = get_total_water_heating_capacity(model)
-
-      if !type.include?(Constant::SpaceHeating)
-        supply_capacity = water_heating_capacity
-      else
-        space_heating_capacity = get_total_space_heating_capacity(model)
-
-        supply_capacity = water_heating_capacity + space_heating_capacity
-        supply_capacity *= 2 # FIXME
-      end
+      heat_pump_capacity = 0.0
     elsif type.include?(Constant::HeatPumpWaterHeater)
-      supply_capacity = 36194.0
+      heat_pump_capacity = 36194.0
+      # boiler_capacity /= 4 # FIXME
     end
 
-    return supply_capacity
+    return boiler_capacity, heat_pump_capacity
   end
 
   def self.create_component(model, type, fuel_type, supply_side_loop, name, capacity, boiler_eff_afue, is_supplemental_space_heating = false)
@@ -111,6 +114,10 @@ class Supply
         component.setMaximumOutdoorDrybulbTemperatureforDefrostOperation(3.0)
         component.setNominalAuxiliaryElectricPower(900)
         component.setStandbyElectricPower(20)
+
+        # Curves
+        cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr = Curves.get_heat_pump_air_to_water_fuel_fired_heating_curves(model, component)
+        Curves.set_heat_pump_air_to_water_fuel_fired_heating_curves(component, cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr)
 
         supply_side_loop.addSupplyBranchForComponent(component)
       end
