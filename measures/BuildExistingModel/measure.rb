@@ -351,7 +351,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium') || water_heater_efficiency.include?('Natural Gas Heat Pump')
         if hvac_shared_efficiencies == 'None'
           if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium')
-            shared_water_heater_type = Constants.WaterHeaterTypeBoiler
+            shared_water_heater_type = Constant::WaterHeaterTypeBoiler
 
             shared_boiler_efficiency_afue = 0.78
             if water_heater_efficiency.end_with?('Premium')
@@ -360,23 +360,23 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
               shared_boiler_efficiency_afue = 0.9
             end
           elsif water_heater_efficiency.include?('Natural Gas Heat Pump')
-            shared_water_heater_type = Constants.WaterHeaterTypeHeatPump
+            shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
           end
         elsif hvac_heating_type_and_fuel == 'Natural Gas Shared Heating'
           shared_boiler_efficiency_afue = 0.78
           if hvac_shared_efficiencies.include?('Boiler')
-            shared_water_heater_type = Constants.WaterHeaterTypeCombiBoiler
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiBoiler
 
             if hvac_shared_efficiencies.end_with?('90% AFUE')
               shared_boiler_efficiency_afue = 0.9
             end
           elsif hvac_shared_efficiencies.include?('Natural Gas Heat Pump')
-            shared_water_heater_type = Constants.WaterHeaterTypeCombiHeatPump
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
           end
         end
       end
 
-      if [Constants.WaterHeaterTypeBoiler, Constants.WaterHeaterTypeHeatPump, Constants.WaterHeaterTypeCombiBoiler, Constants.WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
+      if [Constant::WaterHeaterTypeBoiler, Constant::WaterHeaterTypeHeatPump, Constant::WaterHeaterTypeCombiBoiler, Constant::WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
         shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
       end
     end
@@ -398,10 +398,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     end
 
     num_units_modeled = 1
+    max_num_units_modeled = 5 # FIXME: 2 for testing, 5 for production?
     unit_multipliers = []
     if use_unit_multipliers
       if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
-        max_num_units_modeled = 5 # FIXME: 2 for testing, 5 for production?
         num_units_modeled = [geometry_building_num_units, max_num_units_modeled].min
         unit_multipliers = split_into(geometry_building_num_units, num_units_modeled)
       end
