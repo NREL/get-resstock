@@ -59,17 +59,18 @@ workflow_generator:
       output_variables:
         # - name: Water Heater NaturalGas Energy
         - name: Boiler NaturalGas Energy
+        - name: Boiler Ancillary NaturalGas Energy
         - name: Fuel-fired Absorption HeatPump Fuel Energy
         - name: Fuel-fired Absorption HeatPump Electricity Energy
         # - name: Schedule Value
-        - name: Water Use Connections Hot Water Volume
-        - name: Baseboard Hot Water Energy
+        # - name: Water Use Connections Hot Water Volume
+        # - name: Baseboard Hot Water Energy
         # - name: Plant Supply Side Inlet Temperature
         # - name: Plant Supply Side Outlet Temperature
-        - name: Water Heater Source Side Inlet Temperature
-        - name: Water Heater Source Side Outlet Temperature
-        - name: Water Heater Use Side Inlet Temperature
-        - name: Water Heater Use Side Outlet Temperature
+        # - name: Water Heater Source Side Inlet Temperature
+        # - name: Water Heater Source Side Outlet Temperature
+        # - name: Water Heater Use Side Inlet Temperature
+        # - name: Water Heater Use Side Outlet Temperature
         - name: Boiler Inlet Temperature
         - name: Boiler Outlet Temperature
         - name: Fuel-fired Absorption HeatPump Inlet Temperature

@@ -1,24 +1,36 @@
 # frozen_string_literal: true
 
 class Curves
-  def self.get_heat_pump_air_to_water_fuel_fired_heating_curves(model, component)
+  def self.get_heat_pump_air_to_water_fuel_fired_heating_curves(model, component, t_amb)
     t_amb_min = 0.0 # F; from GTI report
     t_amb_max = 110.0 # F; from GTI report
 
     t_ret_min = 95.0 # F; from GTI report
     t_ret_max = 120.0 # F; from GTI report
 
-    t_amb = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Site Outdoor Air Drybulb Temperature')
-    t_amb.setName('TambC')
-    t_amb.setKeyName('*')
-
     t_ret = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Fuel-fired Absorption HeatPump Inlet Temperature')
-    t_ret.setName('TretC')
+    t_ret.setName("#{component.name} Tret")
     t_ret.setKeyName(component.name.to_s)
 
     program_cm = OpenStudio::Model::EnergyManagementSystemProgramCallingManager.new(model)
     program_cm.setName('GAHP Curves PCM')
     program_cm.setCallingPoint('InsideHVACSystemIterationLoop')
+
+    program = OpenStudio::Model::EnergyManagementSystemProgram.new(model)
+    program.setName('GAHP Curves Program')
+    program.addLine("Set Tret = #{t_ret.name}*(9.0/5.0)+32.0")
+    program.addLine("Set Tret_min = #{t_ret_min}")
+    program.addLine("Set Tret_max = #{t_ret_max}")
+    program.addLine('Set Tret = (@Min Tret Tret_max)')
+    program.addLine('Set Tret = (@Max Tret Tret_min)')
+
+    program.addLine("Set Tamb = #{t_amb.name}*(9.0/5.0)+32.0")
+    program.addLine("Set Tamb_min = #{t_amb_min}")
+    program.addLine("Set Tamb_max = #{t_amb_max}")
+    program.addLine('Set Tamb = (@Min Tamb Tamb_max)')
+    program.addLine('Set Tamb = (@Max Tamb Tamb_min)')
+
+    program_cm.addProgram(program)
 
     cap_func_temp = component.normalizedCapacityFunctionofTemperatureCurve.to_CurveBiquadratic.get
     # cap_func_temp = OpenStudio::Model::CurveBicubic.new(model)
@@ -42,21 +54,6 @@ class Curves
     actuator = OpenStudio::Model::EnergyManagementSystemActuator.new(cap_func_temp, 'Curve', 'Curve Result')
     actuator.setName('CapCurveFuncTempAct')
 
-    program = OpenStudio::Model::EnergyManagementSystemProgram.new(model)
-    program.setName('CapCurveFuncTempFixed')
-
-    program.addLine("Set Tret = #{t_ret.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tret_min = #{t_ret_min}")
-    program.addLine("Set Tret_max = #{t_ret_max}")
-    program.addLine('Set Tret = (@Min Tret Tret_max)')
-    program.addLine('Set Tret = (@Max Tret Tret_min)')
-
-    program.addLine("Set Tamb = #{t_amb.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tamb_min = #{t_amb_min}")
-    program.addLine("Set Tamb_max = #{t_amb_max}")
-    program.addLine('Set Tamb = (@Min Tamb Tamb_max)')
-    program.addLine('Set Tamb = (@Max Tamb Tamb_min)')
-
     program.addLine('Set a1 = -53.99')
     program.addLine('Set b1 = 1.541*Tret')
     program.addLine('Set c1 = -0.006523*Tamb')
@@ -68,8 +65,6 @@ class Curves
     program.addLine('Set i1 = 0.00000006212*Tret*(Tamb^2)')
     program.addLine('Set j1 = 0.00000002424*(Tamb^3)')
     program.addLine("Set #{actuator.name} = a1 + b1 + c1 + d1 + e1 + f1 + g1 + h1 + i1 + j1")
-
-    program_cm.addProgram(program)
 
     ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, "#{actuator.name}")
     ems_output_var.setName("#{actuator.name} Output")
@@ -95,21 +90,6 @@ class Curves
     actuator = OpenStudio::Model::EnergyManagementSystemActuator.new(eir_func_temp, 'Curve', 'Curve Result')
     actuator.setName('EIRCurveFuncTempAct')
 
-    program = OpenStudio::Model::EnergyManagementSystemProgram.new(model)
-    program.setName('EIRCurveFuncTempFixed')
-
-    program.addLine("Set Tret = #{t_ret.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tret_min = #{t_ret_min}")
-    program.addLine("Set Tret_max = #{t_ret_max}")
-    program.addLine('Set Tret = (@Min Tret Tret_max)')
-    program.addLine('Set Tret = (@Max Tret Tret_min)')
-
-    program.addLine("Set Tamb = #{t_amb.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tamb_min = #{t_amb_min}")
-    program.addLine("Set Tamb_max = #{t_amb_max}")
-    program.addLine('Set Tamb = (@Min Tamb Tamb_max)')
-    program.addLine('Set Tamb = (@Max Tamb Tamb_min)')
-
     program.addLine('Set a2 = 0.5205')
     program.addLine('Set b2 = 0.00004408*Tamb')
     program.addLine('Set c2 = 0.0000176*(Tamb^2)')
@@ -117,8 +97,6 @@ class Curves
     program.addLine('Set e2 = -0.0001215*Tamb*Tret')
     program.addLine('Set f2 = 0.0000005196*(Tamb^2)*Tret')
     program.addLine("Set #{actuator.name} = a2 + b2 + c2 + d2 + e2 + f2")
-
-    program_cm.addProgram(program)
 
     ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, "#{actuator.name}")
     ems_output_var.setName("#{actuator.name} Output")
@@ -173,21 +151,6 @@ class Curves
     actuator = OpenStudio::Model::EnergyManagementSystemActuator.new(aux_eir_func_temp, 'Curve', 'Curve Result')
     actuator.setName('AuxElecEIRCurveFuncTempCurveAct')
 
-    program = OpenStudio::Model::EnergyManagementSystemProgram.new(model)
-    program.setName('AuxElecEIRCurveFuncTempCurveFixed')
-
-    program.addLine("Set Tret = #{t_ret.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tret_min = #{t_ret_min}")
-    program.addLine("Set Tret_max = #{t_ret_max}")
-    program.addLine('Set Tret = (@Min Tret Tret_max)')
-    program.addLine('Set Tret = (@Max Tret Tret_min)')
-
-    program.addLine("Set Tamb = #{t_amb.name}*(9.0/5.0)+32.0")
-    program.addLine("Set Tamb_min = #{t_amb_min}")
-    program.addLine("Set Tamb_max =  #{t_amb_max}")
-    program.addLine('Set Tamb = (@Min Tamb Tamb_max)')
-    program.addLine('Set Tamb = (@Max Tamb Tamb_min)')
-
     program.addLine('Set a4 = 1.102')
     program.addLine('Set b4 = -0.0008714*Tamb')
     program.addLine('Set c4 = -0.000009238*(Tamb^2)')
@@ -196,8 +159,6 @@ class Curves
     program.addLine('Set f4 = 0.0000007846*Tamb*Tret')
     program.addLine("Set #{actuator.name} = a4 + b4 + c4 + d4 + e4 + f4")
 
-    program_cm.addProgram(program)
-
     ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, "#{actuator.name}")
     ems_output_var.setName("#{actuator.name} Output")
     ems_output_var.setTypeOfDataInVariable('Averaged')
@@ -205,7 +166,7 @@ class Curves
     ems_output_var.setEMSProgramOrSubroutineName(program)
 
     aux_eir_func_plr = OpenStudio::Model::CurveBiquadratic.new(model)
-    aux_eir_func_plr.setName('auxElecEIRForPLRCurve')
+    aux_eir_func_plr.setName('AuxElecEIRForPLRCurve')
     aux_eir_func_plr.setCoefficient1Constant(1)
     aux_eir_func_plr.setCoefficient2x(0)
     aux_eir_func_plr.setCoefficient3xPOW2(0)
@@ -240,12 +201,12 @@ class Curves
     return curve
   end
 
-  def self.set_heat_pump_air_to_water_fuel_fired_heating_curves(component, cap_func_temp, eir_func_temp, _eir_func_plr, _eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, _aux_eir_func_plr)
+  def self.set_heat_pump_air_to_water_fuel_fired_heating_curves(component, cap_func_temp, eir_func_temp, _eir_func_plr, _eir_defrost_adj, _cycling_ratio_factor, aux_eir_func_temp, _aux_eir_func_plr)
     component.setNormalizedCapacityFunctionofTemperatureCurve(cap_func_temp)
     component.setFuelEnergyInputRatioFunctionofTemperatureCurve(eir_func_temp)
     # component.setFuelEnergyInputRatioFunctionofPLRCurve(eir_func_plr)
     # component.setFuelEnergyInputRatioDefrostAdjustmentCurve(eir_defrost_adj)
-    component.setCyclingRatioFactorCurve(cycling_ratio_factor)
+    # component.setCyclingRatioFactorCurve(cycling_ratio_factor)
     component.setAuxiliaryElectricEnergyInputRatioFunctionofTemperatureCurve(aux_eir_func_temp)
     # component.setAuxiliaryElectricEnergyInputRatioFunctionofPLRCurve(aux_eir_func_plr)
   end

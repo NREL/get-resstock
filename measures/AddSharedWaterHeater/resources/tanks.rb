@@ -10,20 +10,37 @@ class Tanks
     return UnitConversions.convert(total_water_heating_tank_volume, 'm^3', 'gal')
   end
 
-  def self.get_storage_volume(model, type)
+  def self.get_storage_volumes(model, type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
     # gal
-    if type.include?(Constant::Boiler)
-      storage_tank_volume = get_total_water_heating_tank_volume(model)
+    boiler_storage_tank_volume = 0.0
+    heat_pump_storage_tank_volume = 0.0
+
+    boiler_storage_tank_volume = get_total_water_heating_tank_volume(model)
+
+    boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
+    boiler_storage_tank_volume = [180.0, boiler_storage_tank_volume].min # FIXME max 180 gal
+
+    if type.include?(Constant::SpaceHeating)
+      boiler_storage_tank_volume *= 4
+    end
+
+    if type.include?(Constant::HeatPumpWaterHeater)
+      gal_per_unit = 25.0 # FIXME
+      heat_pump_storage_tank_volume = gal_per_unit * num_units # FIXME: this is independent of the fixed Robur size; meaning, should be sized?
+      heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].min # FIXME max 120 gal
 
       if type.include?(Constant::SpaceHeating)
-        storage_tank_volume *= 2
+        heat_pump_storage_tank_volume *= 4
       end
-    elsif type.include?(Constant::HeatPumpWaterHeater)
-      storage_tank_volume = 200.0 # FIXME: this is independent of the fixed Robur size; meaning, should be sized
-    end
-    storage_tank_volume = 120.0 # FIXME
 
-    return storage_tank_volume
+      if type.include?(Constant::SpaceHeating)
+        boiler_storage_tank_volume *= boiler_backup_sh_frac # FIXME
+      else
+        boiler_storage_tank_volume *= boiler_backup_wh_frac # FIXME
+      end
+    end
+
+    return boiler_storage_tank_volume, heat_pump_storage_tank_volume
   end
 
   def self.get_swing_volume(include_swing_tank, num_units)

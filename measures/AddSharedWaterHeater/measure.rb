@@ -76,11 +76,14 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # num_beds = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_bedrooms }.sum
 
     # Supply
+    boiler_backup_wh_frac = 0.1 # FIXME
+    boiler_backup_sh_frac = 0.05 # FIXME
+
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units)
-    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type)
+    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, boiler_backup_wh_frac, boiler_backup_sh_frac)
 
     # Tanks
-    storage_tank_volume = Tanks.get_storage_volume(model, shared_water_heater_type)
+    boiler_storage_tank_volume, heat_pump_storage_tank_volume = Tanks.get_storage_volumes(model, shared_water_heater_type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Setpoints
@@ -167,15 +170,23 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Storage Tank(s)
     prev_storage_tank = nil
+
+    # boiler_loops.each do |supply_loop, components|
+    # storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
+    # storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
+
+    # components << storage_tank
+    # prev_storage_tank = components[0]
+    # end
     heat_pump_loops.each do |supply_loop, components|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp)
+      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
       prev_storage_tank = components[0]
     end
     boiler_loops.each do |supply_loop, components|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
+      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
@@ -192,13 +203,17 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') if swing_tank.nil?
     space_heating_hx = HeatExchangers.create(model, storage_loop, space_heating_loop, 'Space Heating Heat Exchanger') if shared_water_heater_type.include?(Constant::SpaceHeating)
 
+    t_amb = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Site Outdoor Air Drybulb Temperature')
+    t_amb.setName('TambC')
+    t_amb.setKeyName('*')
+
     # Add Supply Components
     boiler_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue)
+      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb)
       components << component
     end
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue)
+      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue, t_amb)
       components << component
     end
 
@@ -247,7 +262,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('loop_sp_storage', storage_loop_sp) if !storage_loop_sp.nil?
     runner.registerValue('loop_sp_dhw', dhw_loop_sp) if !dhw_loop_sp.nil?
     runner.registerValue('loop_sp_space_heating', space_heating_loop_sp) if !space_heating_loop_sp.nil?
-    runner.registerValue('tank_volume_storage', storage_tank_volume)
+    runner.registerValue('tank_volume_storage_boiler', boiler_storage_tank_volume)
+    runner.registerValue('tank_volume_storage_heat_pump', heat_pump_storage_tank_volume)
     runner.registerValue('tank_volume_swing', swing_tank_volume)
     runner.registerValue('tank_capacity_swing', swing_tank_capacity)
     runner.registerValue('reconnected_water_heatings', reconnected_water_heatings)

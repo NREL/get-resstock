@@ -44,7 +44,8 @@ class Loops
     prev_return_pipe = nil
 
     reconnected_water_heatings = 0
-    model.getWaterUseConnectionss.each_with_index do |wuc, _i|
+    water_use_connections = model.getWaterUseConnectionss.sort_by { |wuc| wuc.name.to_s }
+    water_use_connections.each_with_index do |wuc, _i|
       wuc.setName("#{wuc.name}_reconnected")
 
       if prev_wuc.nil?
@@ -93,9 +94,9 @@ class Loops
     reconnected_space_heatings = 0
     return reconnected_space_heatings if space_heating_loop.nil?
 
-    coil_heating_water_baseboards = model.getCoilHeatingWaterBaseboards
-    coil_heating_waters = model.getCoilHeatingWaters
-    coil_cooling_waters = model.getCoilCoolingWaters
+    coil_heating_water_baseboards = model.getCoilHeatingWaterBaseboards.sort_by { |chwb| chwb.name.to_s }
+    coil_heating_waters = model.getCoilHeatingWaters.sort_by { |chw| chw.name.to_s }
+    coil_cooling_waters = model.getCoilCoolingWaters.sort_by { |ccw| ccw.name.to_s }
 
     coil_heating_water_baseboards.each do |chwb|
       chwb.setName("#{chwb.name}_reconnected")

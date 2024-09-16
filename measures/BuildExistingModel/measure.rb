@@ -398,10 +398,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     end
 
     num_units_modeled = 1
+    max_num_units_modeled = 5 # FIXME: 2 for testing, 5 for production?
     unit_multipliers = []
     if use_unit_multipliers
       if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
-        max_num_units_modeled = 5 # FIXME: 2 for testing, 5 for production?
         num_units_modeled = [geometry_building_num_units, max_num_units_modeled].min
         unit_multipliers = split_into(geometry_building_num_units, num_units_modeled)
       end
