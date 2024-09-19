@@ -76,8 +76,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # num_beds = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_bedrooms }.sum
 
     # Supply
-    boiler_backup_wh_frac = 0.1 # FIXME
-    boiler_backup_sh_frac = 0.05 # FIXME
+    boiler_backup_wh_frac = 1 # FIXME
+    boiler_backup_sh_frac = 1 # FIXME
 
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units)
     boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, boiler_backup_wh_frac, boiler_backup_sh_frac)
@@ -154,7 +154,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     supply_loops.each do |supply_loop, _|
       Pumps.create_constant_speed(model, supply_loop, supply_pump_gpm, pump_head, pump_w)
     end
-    Pumps.create_constant_speed(model, storage_loop, storage_pump_gpm, pump_head, pump_w)
+    Pumps.create_constant_speed(model, storage_loop, storage_pump_gpm, pump_head, 0)
     Pumps.create_constant_speed(model, space_heating_loop, space_heating_pump_gpm, pump_head, pump_w)
 
     # Add Setpoint Managers
@@ -167,6 +167,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
     Setpoints.create_manager(model, storage_loop, storage_loop_sp_schedule)
     Setpoints.create_manager(model, space_heating_loop, space_heating_loop_sp_schedule)
+
+    # heating_op_scheme = OpenStudio::Model::PlantEquipmentOperationHeatingLoad.new(model)
 
     # Add Storage Tank(s)
     prev_storage_tank = nil
@@ -184,6 +186,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
       components << storage_tank
       prev_storage_tank = components[0]
+
+      # heating_op_scheme.addEquipment(storage_tank)
     end
     boiler_loops.each do |supply_loop, components|
       storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
@@ -191,7 +195,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
       components << storage_tank
       prev_storage_tank = components[0]
+
+      # heating_op_scheme.addEquipment(storage_tank)
+      # heating_op_scheme.addLoadRange(100.0, [storage_tank])
     end
+
+    # storage_loop.setPlantEquipmentOperationHeatingLoad(heating_op_scheme)
 
     # Add Swing Tank
     swing_tank_capacity /= 2 # FIXME
@@ -212,15 +221,28 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb)
       components << component
     end
+    backup_node = nil
     heat_pump_loops.each do |supply_loop, components|
       component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue, t_amb)
       components << component
+
+      # backup_node = component.inletModelObject.get.to_Node.get if backup_node.nil?
+
+      # boiler = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb)
+
+      # heating_op_scheme = OpenStudio::Model::PlantEquipmentOperationHeatingLoad.new(model)
+      # heating_op_scheme.addEquipment(component)
+      # heating_op_scheme.addEquipment(boiler)
+      # heating_op_scheme.addLoadRange(1000.0, [boiler])
+      # supply_loop.setPlantEquipmentOperationHeatingLoad(heating_op_scheme)
     end
 
     # Add Availability Manager(s)
-    supply_loops.each do |supply_loop, components|
+    supply_loops.each do |_supply_loop, components|
       storage_tank, component = components
-      if component.to_BoilerHotWater.is_initialized || component.to_HeatPumpAirToWaterFuelFiredHeating.is_initialized
+      if component.to_BoilerHotWater.is_initialized
+        hot_node = component.outletModelObject.get.to_Node.get
+      elsif component.to_HeatPumpAirToWaterFuelFiredHeating.is_initialized
         hot_node = component.outletModelObject.get.to_Node.get
       elsif component.to_WaterHeaterStratified.is_initialized
         hot_node = component.supplyOutletModelObject.get.to_Node.get
@@ -228,7 +250,14 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       # hot_node = storage_tank.sourceSideInletModelObject.get.to_Node.get
       # cold_node = storage_tank.sourceSideOutletModelObject.get.to_Node.get
       cold_node = storage_tank.demandOutletModelObject.get.to_Node.get
-      Setpoints.create_availability(model, supply_loop, hot_node, cold_node)
+      # Setpoints.create_availability(model, supply_loop, hot_node, cold_node)
+    end
+
+    if shared_water_heater_type.include?(Constant::HeatPumpWaterHeater)
+      backup_node = storage_loop.supplyInletNode
+      boiler_loops.each do |supply_loop, _components|
+        Setpoints.create_availability(model, supply_loop, backup_node, nil, 120.0) # FIXME: try with and without this change
+      end
     end
 
     # Re-connect WaterUseConections (in series) with PipeIndoors

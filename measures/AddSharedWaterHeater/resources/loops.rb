@@ -38,7 +38,8 @@ class Loops
   end
 
   def self.reconnect_water_use_connections(model, dhw_loop, indoor_pipes)
-    connections_in_series = true # otherwise parallel
+    # connections_in_series = true # otherwise parallel
+    connections_in_series = false # FIXME
 
     prev_wuc = nil
     prev_return_pipe = nil
@@ -59,8 +60,8 @@ class Loops
         supply_pipe, return_pipe = indoor_pipes[wuc]
 
         # Option 1
-        # supply_pipe.addToNode(dhw_loop.demandInletNode)
-        # return_pipe.addToNode(dhw_loop.demandOutletNode)
+        supply_pipe.addToNode(dhw_loop.demandInletNode)
+        return_pipe.addToNode(dhw_loop.demandOutletNode)
 
         # Option 2
         # supply_pipe.addToNode(wuc.inletModelObject.get.to_Node.get)

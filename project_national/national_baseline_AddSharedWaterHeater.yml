@@ -58,10 +58,13 @@ workflow_generator:
       include_timeseries_resilience: false
       output_variables:
         # - name: Water Heater NaturalGas Energy
+        - name: Boiler Heating Energy
         - name: Boiler NaturalGas Energy
-        - name: Boiler Ancillary NaturalGas Energy
+        # - name: Boiler Ancillary NaturalGas Energy
+        # - name: Boiler Ancillary Electricity Energy
+        - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy
         - name: Fuel-fired Absorption HeatPump Fuel Energy
-        - name: Fuel-fired Absorption HeatPump Electricity Energy
+        # - name: Fuel-fired Absorption HeatPump Electricity Energy
         # - name: Schedule Value
         # - name: Water Use Connections Hot Water Volume
         # - name: Baseboard Hot Water Energy
@@ -75,17 +78,23 @@ workflow_generator:
         - name: Boiler Outlet Temperature
         - name: Fuel-fired Absorption HeatPump Inlet Temperature
         - name: Fuel-fired Absorption HeatPump Outlet Temperature
-        # - name: Water Heater Temperature Node 1
-        # - name: Water Heater Temperature Node 6
+        - name: Pump Fluid Heat Gain Rate
+        # - name: Pump Fluid Heat Gain Energy
+        # - name: Water Heater Heat Loss Rate
+        - name: Water Heater Tank Temperature
+        # - name: Water Heater Temperature Node 1 # use side outlet and source side inlet
+        # - name: Water Heater Temperature Node 6 # use side inlet and source side outlet
         # - name: Performance Curve Input Variable 1 Value
         # - name: Performance Curve Input Variable 2 Value
         # - name: Performance Curve Output Value
-        - name: Site Outdoor Air Drybulb Temperature
+        # - name: Pump Electricity Energy
+        # - name: Site Outdoor Air Drybulb Temperature
         - name: CapCurveFuncTempAct Output
         - name: EIRCurveFuncTempAct Output
         - name: AuxElecEIRCurveFuncTempCurveAct Output
         # - name: Schedule Value
         # - name: Availability Manager Differential Thermostat Control Status
+        # - name: Availability Manager Low Temperature Turn On Control Status
         # - name: Availability Manager High Temperature Turn Off Control Status
 
     reporting_measures:

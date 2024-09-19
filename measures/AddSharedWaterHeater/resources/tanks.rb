@@ -10,28 +10,35 @@ class Tanks
     return UnitConversions.convert(total_water_heating_tank_volume, 'm^3', 'gal')
   end
 
-  def self.get_storage_volumes(model, type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
+  def self.get_storage_volumes(_model, type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
     # gal
+    gal_per_unit = 2.6 * 4.8 / 0.7 # FIXME
+
     boiler_storage_tank_volume = 0.0
     heat_pump_storage_tank_volume = 0.0
 
-    boiler_storage_tank_volume = get_total_water_heating_tank_volume(model)
+    # boiler_storage_tank_volume = get_total_water_heating_tank_volume(model)
+    boiler_storage_tank_volume = gal_per_unit * num_units
 
-    boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
-    boiler_storage_tank_volume = [180.0, boiler_storage_tank_volume].min # FIXME max 180 gal
-
-    if type.include?(Constant::SpaceHeating)
-      boiler_storage_tank_volume *= 4
+    if !type.include?(Constant::SpaceHeating)
+      boiler_storage_tank_volume *= 1
+    else
+      boiler_storage_tank_volume *= 6 # increase frm 4 to 6 -> less unmet loads
     end
 
-    if type.include?(Constant::HeatPumpWaterHeater)
-      gal_per_unit = 25.0 # FIXME
-      heat_pump_storage_tank_volume = gal_per_unit * num_units # FIXME: this is independent of the fixed Robur size; meaning, should be sized?
-      heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].min # FIXME max 120 gal
+    # boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
 
-      if type.include?(Constant::SpaceHeating)
-        heat_pump_storage_tank_volume *= 4
+    if type.include?(Constant::HeatPumpWaterHeater)
+
+      heat_pump_storage_tank_volume = gal_per_unit * num_units
+
+      if !type.include?(Constant::SpaceHeating)
+        heat_pump_storage_tank_volume *= 1 # FIXME
+      else
+        heat_pump_storage_tank_volume *= 1 # FIXME: decrease this from 4 and see hot water during the summer?
       end
+
+      # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
 
       if type.include?(Constant::SpaceHeating)
         boiler_storage_tank_volume *= boiler_backup_sh_frac # FIXME

@@ -22,7 +22,8 @@ class Pumps
 
     pump = OpenStudio::Model::PumpConstantSpeed.new(model)
     pump.setName("#{loop.name} Pump")
-    pump.setRatedPowerConsumption(pump_w) if !pump_w.nil?
+    pump.setMotorEfficiency(0.85) # OS-HPXML PumpVariableSpeed value
+    pump.setRatedPowerConsumption(pump_w) if !pump_w.nil? # FIXME: set this to 0 for Storage Loop as it may be meeting water heating load during the summer?
     pump.setRatedPumpHead(pump_head) if !pump_head.nil?
     if pump_gpm.nil?
       # pump.setRatedFlowRate(pump_eff * pump_w / pump_head) if !pump_w.nil? && !pump_head.nil?

@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_counts(type, num_beds, num_units)
-    if type.include?(Constant::Boiler)
-      boiler_count = 1
-      heat_pump_count = 0
-    elsif type.include?(Constant::HeatPumpWaterHeater)
+  def self.get_supply_counts(type, _num_beds, _num_units)
+    boiler_count = 1
+    heat_pump_count = 0
+
+    if type.include?(Constant::HeatPumpWaterHeater)
       # Calculate some size parameters: number of heat pumps, storage tank volume, number of tanks, swing tank volume
       # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
       # FIXME: How to adjust size when used for space heating?
-      heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
+      # heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
       # heat_pump_count = [1, heat_pump_count].max # FIXME: min
       heat_pump_count = 1
 
-      boiler_count = 0 # FIXME
-      # boiler_count = 1 # FIXME
+      # boiler_count = 0 # FIXME
+      boiler_count = 1 # FIXME
       if type.include?(Constant::SpaceHeating)
         # heat_pump_count += 0 # FIXME
       end
@@ -44,17 +44,15 @@ class Supply
   def self.get_supply_capacities(model, type, boiler_backup_wh_frac, boiler_backup_sh_frac)
     # W
     water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 # FIXME
+    space_heating_capacity = get_total_space_heating_capacity(model) # FIXME
 
-    if !type.include?(Constant::SpaceHeating)
-      boiler_capacity = water_heating_capacity
-    else
-      space_heating_capacity = get_total_space_heating_capacity(model)
-
-      boiler_capacity = water_heating_capacity + space_heating_capacity
+    boiler_capacity = water_heating_capacity
+    if type.include?(Constant::SpaceHeating)
+      boiler_capacity += space_heating_capacity
     end
-    if type.include?(Constant::Boiler)
-      heat_pump_capacity = 0.0
-    elsif type.include?(Constant::HeatPumpWaterHeater)
+
+    heat_pump_capacity = 0.0
+    if type.include?(Constant::HeatPumpWaterHeater)
       heat_pump_capacity = 36194.0
 
       if type.include?(Constant::SpaceHeating)
@@ -74,7 +72,8 @@ class Supply
       component.setNominalThermalEfficiency(boiler_eff_afue)
       component.setNominalCapacity(capacity)
       component.setFuelType(EPlus.fuel_type(fuel_type))
-      component.setMinimumPartLoadRatio(0.0)
+      component.setMinimumPartLoadRatio(0.0) # FIXME: default
+      # component.setMinimumPartLoadRatio(0.2) # FIXME: hand calculation
       component.setMaximumPartLoadRatio(1.0)
       component.setOptimumPartLoadRatio(1.0)
       component.setBoilerFlowMode('LeavingSetpointModulated')
@@ -112,14 +111,17 @@ class Supply
         # component.setFlowMode('LeavingSetpointModulated') # FIXME: this zeros out Fuel-fired Absorption HeatPump Electricity Energy: Supply Loop 1 Water Heater
         # component.setFlowMode('ConstantFlow')
         # component.setWaterTemperatureCurveInputVariable('LeavingCondenser') # FIXME
-        component.setMinimumPartLoadRatio(0.2)
+        # component.setMinimumPartLoadRatio(0.1) # FIXME: default
+        component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
         component.setMaximumPartLoadRatio(1.0)
         component.setDefrostControlType('OnDemand')
         component.setDefrostOperationTimeFraction(0.0)
         component.setResistiveDefrostHeaterCapacity(0.0)
         component.setMaximumOutdoorDrybulbTemperatureforDefrostOperation(3.0)
         component.setNominalAuxiliaryElectricPower(900)
+        # component.setNominalAuxiliaryElectricPower(0)
         component.setStandbyElectricPower(20)
+        # component.setStandbyElectricPower(0)
 
         # Curves
         cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr = Curves.get_heat_pump_air_to_water_fuel_fired_heating_curves(model, component, t_amb)

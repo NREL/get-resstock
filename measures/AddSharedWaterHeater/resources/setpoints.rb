@@ -5,12 +5,12 @@ class Setpoints
     # deg-F
     dhw_loop_sp = 135.0
     if type == Constant::WaterHeaterTypeBoiler
-      boiler_loop_sp = 180.0
+      boiler_loop_sp = 140.0 # FIXME: should this just be 140 since we don't need 180?
       heat_pump_loop_sp = nil
       storage_loop_sp = 140.0
       space_heating_loop_sp = nil
     elsif type == Constant::WaterHeaterTypeHeatPump
-      boiler_loop_sp = 180.0
+      boiler_loop_sp = 140.0 # FIXME: should this just be 140 since we don't need 180?
       heat_pump_loop_sp = 140.0
       storage_loop_sp = 140.0
       space_heating_loop_sp = nil
@@ -47,20 +47,34 @@ class Setpoints
     manager.addToNode(loop.supplyOutletNode)
   end
 
-  def self.create_availability(model, loop, hot_node, cold_node)
-    availability_manager = OpenStudio::Model::AvailabilityManagerDifferentialThermostat.new(model)
-    availability_manager.setHotNode(hot_node)
-    availability_manager.setColdNode(cold_node)
-    availability_manager.setTemperatureDifferenceOnLimit(0)
-    # availability_manager.setTemperatureDifferenceOnLimit(11.111)
-    availability_manager.setTemperatureDifferenceOffLimit(0)
+  def self.create_availability(model, loop, node_1, node_2, temperature)
+    if node_2.nil?
+      availability_manager = OpenStudio::Model::AvailabilityManagerLowTemperatureTurnOn.new(model)
+      availability_manager.setName("#{loop.name} Low Turn On #{temperature}F")
+      availability_manager.setSensorNode(node_1)
+      availability_manager.setTemperature(UnitConversions.convert(temperature, 'F', 'C'))
+      loop.addAvailabilityManager(availability_manager)
+
+      availability_manager = OpenStudio::Model::AvailabilityManagerHighTemperatureTurnOff.new(model)
+      availability_manager.setName("#{loop.name} High Turn Off #{temperature}F")
+      availability_manager.setSensorNode(node_1)
+      availability_manager.setTemperature(UnitConversions.convert(temperature, 'F', 'C'))
+      loop.addAvailabilityManager(availability_manager)
+    else
+      availability_manager = OpenStudio::Model::AvailabilityManagerDifferentialThermostat.new(model)
+      availability_manager.setHotNode(node_1)
+      availability_manager.setColdNode(node_2)
+      availability_manager.setTemperatureDifferenceOnLimit(0)
+      availability_manager.setTemperatureDifferenceOffLimit(0)
+      loop.addAvailabilityManager(availability_manager)
+    end
 
     # availability_manager = OpenStudio::Model::AvailabilityManagerHighTemperatureTurnOff.new(model)
-    # availability_manager.setSensorNode(hot_node)
-    # availability_manager.setSensorNode(cold_node)
+    # availability_manager.setSensorNode(node_1)
     # availability_manager.setTemperature(60.0)
+    # loop.addAvailabilityManager(availability_manager)
 
-    availability_manager.setName("#{loop.name} Availability Manager")
-    loop.addAvailabilityManager(availability_manager)
+    # availability_manager.setName("#{loop.name} Availability Manager")
+    # loop.addAvailabilityManager(availability_manager)
   end
 end
