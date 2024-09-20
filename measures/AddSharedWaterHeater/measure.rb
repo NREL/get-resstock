@@ -98,7 +98,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Pipes
     supply_length, return_length = Pipes.get_recirc_supply_return_lengths(hpxml_bldg, num_units, num_stories, has_double_loaded_corridor)
     supply_ins_r, return_ins_r = Pipes.get_recirc_ins_r_value()
-    indoor_pipes = Pipes.create_indoor(model, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
 
     # Flows
     dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # OS-HPXML ###
@@ -148,6 +147,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     Pipes.create_adiabatic_demand(model, storage_loop)
     Pipes.create_adiabatic_supply(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
     Pipes.create_adiabatic_demand(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
+
+    # Add Non-Adiabatic Pipes
+    Pipes.create_indoor(model, dhw_loop, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
 
     # Add Pumps
     Pumps.create_constant_speed(model, dhw_loop, dhw_pump_gpm, pump_head, pump_w, 'Continuous')
@@ -261,7 +263,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # Re-connect WaterUseConections (in series) with PipeIndoors
-    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop, indoor_pipes)
+    reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop)
 
     # Re-connect CoilHeatingWaterBaseboards (in parallel)
     reconnected_space_heatings = Loops.reconnect_space_water_coils(model, space_heating_loop)

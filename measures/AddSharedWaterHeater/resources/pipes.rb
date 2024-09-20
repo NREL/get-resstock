@@ -133,7 +133,7 @@ class Pipes
     return UnitConversions.convert(supply_thickness, 'in', 'm'), UnitConversions.convert(return_thickness, 'in', 'm')
   end
 
-  def self.create_indoor(model, supply_length, return_length, supply_pipe_ins_r_value, return_pipe_ins_r_value, num_units)
+  def self.create_indoor(model, dhw_loop, supply_length, return_length, supply_pipe_ins_r_value, return_pipe_ins_r_value, num_units)
     # Copper Pipe
     roughness = 'Smooth'
     thickness = 0.003
@@ -192,9 +192,9 @@ class Pipes
     insulated_return_pipe_construction.setLayers(return_pipe_materials)
 
     # Thermal Zones
-    indoor_pipes = {}
-    model.getWaterUseConnectionss.each do |wuc|
-      thermal_zone = get_thermal_zone_from_water_use_connections(wuc)
+    thermal_zones = model.getThermalZones.sort_by { |tz| tz.name.to_s }
+    thermal_zones.each do |thermal_zone|
+      next if thermal_zone.volume.is_initialized && thermal_zone.volume.get <= 1 # skip the return air plenum zone
 
       # Supply
       supply_pipe_indoor = OpenStudio::Model::PipeIndoor.new(model)
@@ -204,8 +204,7 @@ class Pipes
       supply_pipe_indoor.setPipeInsideDiameter(UnitConversions.convert(supply_diameter, 'in', 'm'))
       # supply_pipe_indoor.setPipeLength(UnitConversions.convert(supply_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
       supply_pipe_indoor.setPipeLength(UnitConversions.convert((supply_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
-
-      # supply_pipe_indoor.addToNode(demand_inlet.outletModelObject.get.to_Node.get)
+      supply_pipe_indoor.addToNode(dhw_loop.demandInletNode)
 
       # Return
       return_pipe_indoor = OpenStudio::Model::PipeIndoor.new(model)
@@ -215,22 +214,7 @@ class Pipes
       return_pipe_indoor.setPipeInsideDiameter(UnitConversions.convert(return_diameter, 'in', 'm'))
       # return_pipe_indoor.setPipeLength(UnitConversions.convert(return_length / num_units, 'ft', 'm')) # FIXME: if unit multiplier DOES account for this
       return_pipe_indoor.setPipeLength(UnitConversions.convert((return_length / num_units) * thermal_zone.multiplier, 'ft', 'm')) # FIXME: if unit multiplier DOES NOT account for this
-
-      # return_pipe_indoor.addToNode(demand_bypass.outletModelObject.get.to_Node.get)
-
-      indoor_pipes[wuc] = [supply_pipe_indoor, return_pipe_indoor]
-    end
-
-    return indoor_pipes
-  end
-
-  def self.get_thermal_zone_from_water_use_connections(wuc)
-    plant_loop = wuc.plantLoop.get
-    plant_loop.supplyComponents.each do |supply_component|
-      next unless supply_component.to_WaterHeaterMixed.is_initialized
-      if supply_component.to_WaterHeaterMixed.get.ambientTemperatureThermalZone.is_initialized
-        return supply_component.to_WaterHeaterMixed.get.ambientTemperatureThermalZone.get
-      end
+      return_pipe_indoor.addToNode(dhw_loop.demandOutletNode)
     end
   end
 end
