@@ -15,15 +15,19 @@ class Setpoints
       storage_loop_sp = 140.0
       space_heating_loop_sp = nil
     elsif type == Constant::WaterHeaterTypeCombiBoiler
-      boiler_loop_sp = 180.0
+      space_heat_sp = 140.0
+
+      boiler_loop_sp = space_heat_sp
       heat_pump_loop_sp = nil
-      storage_loop_sp = 180.0
-      space_heating_loop_sp = 180.0
+      storage_loop_sp = space_heat_sp
+      space_heating_loop_sp = space_heat_sp
     elsif type == Constant::WaterHeaterTypeCombiHeatPump
-      boiler_loop_sp = 180.0
+      space_heat_sp = 140.0
+
+      boiler_loop_sp = space_heat_sp
       heat_pump_loop_sp = 140.0
-      storage_loop_sp = 180.0
-      space_heating_loop_sp = 180.0
+      storage_loop_sp = space_heat_sp
+      space_heating_loop_sp = space_heat_sp
     end
 
     return dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp

@@ -255,10 +255,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       # Setpoints.create_availability(model, supply_loop, hot_node, cold_node)
     end
 
+    heat_pump_inlet = 120.0 # FIXME: try with and without this change
     if shared_water_heater_type.include?(Constant::HeatPumpWaterHeater)
       backup_node = storage_loop.supplyInletNode
       boiler_loops.each do |supply_loop, _components|
-        Setpoints.create_availability(model, supply_loop, backup_node, nil, 120.0) # FIXME: try with and without this change
+        Setpoints.create_availability(model, supply_loop, backup_node, nil, heat_pump_inlet)
       end
     end
 

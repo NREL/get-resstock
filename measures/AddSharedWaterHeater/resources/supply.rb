@@ -111,8 +111,8 @@ class Supply
         # component.setFlowMode('LeavingSetpointModulated') # FIXME: this zeros out Fuel-fired Absorption HeatPump Electricity Energy: Supply Loop 1 Water Heater
         # component.setFlowMode('ConstantFlow')
         # component.setWaterTemperatureCurveInputVariable('LeavingCondenser') # FIXME
-        # component.setMinimumPartLoadRatio(0.1) # FIXME: default
-        component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
+        component.setMinimumPartLoadRatio(0.1) # FIXME: default
+        # component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
         component.setMaximumPartLoadRatio(1.0)
         component.setDefrostControlType('OnDemand')
         component.setDefrostOperationTimeFraction(0.0)

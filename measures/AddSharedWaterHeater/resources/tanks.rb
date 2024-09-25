@@ -23,7 +23,7 @@ class Tanks
     if !type.include?(Constant::SpaceHeating)
       boiler_storage_tank_volume *= 1
     else
-      boiler_storage_tank_volume *= 6 # increase frm 4 to 6 -> less unmet loads
+      boiler_storage_tank_volume *= 1
     end
 
     # boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
@@ -33,9 +33,9 @@ class Tanks
       heat_pump_storage_tank_volume = gal_per_unit * num_units
 
       if !type.include?(Constant::SpaceHeating)
-        heat_pump_storage_tank_volume *= 1 # FIXME
+        heat_pump_storage_tank_volume *= 1
       else
-        heat_pump_storage_tank_volume *= 1 # FIXME: decrease this from 4 and see hot water during the summer?
+        heat_pump_storage_tank_volume *= 1
       end
 
       # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
