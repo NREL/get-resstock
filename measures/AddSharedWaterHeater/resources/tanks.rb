@@ -27,6 +27,7 @@ class Tanks
     end
 
     # boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
+    boiler_storage_tank_volume = 480.0 # FIXME
 
     if type.include?(Constant::HeatPumpWaterHeater)
 
@@ -39,6 +40,7 @@ class Tanks
       end
 
       # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
+      heat_pump_storage_tank_volume = 120.0 # FIXME
 
       if type.include?(Constant::SpaceHeating)
         boiler_storage_tank_volume *= boiler_backup_sh_frac # FIXME
@@ -83,29 +85,48 @@ class Tanks
 
     # TODO: set volume, height, deadband, control
     capacity = 0
-    storage_tank.setTankHeight(h_tank)
-    storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
-    storage_tank.setHeater1Capacity(capacity)
-    storage_tank.setHeater2Capacity(capacity)
+
     setpoint_schedule = OpenStudio::Model::ScheduleConstant.new(model)
     setpoint_schedule.setName("#{name} Temperature #{setpoint.round}F")
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
+
+    storage_tank.setEndUseSubcategory(name)
+    storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
+    storage_tank.setTankHeight(h_tank)
+    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
     storage_tank.setHeater1SetpointTemperatureSchedule(setpoint_schedule)
+    storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2SetpointTemperatureSchedule(setpoint_schedule)
+    storage_tank.setHeater2Capacity(capacity)
+    storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    storage_tank.setHeaterThermalEfficiency(1) # FIXME: apply_solar_thermal
+
+    # amb = 40 # C
+    # loc_schedule = OpenStudio::Model::ScheduleConstant.new(model)
+    # loc_schedule.setName("#{name} Ambient #{amb}F")
+    # loc_schedule.setValue(UnitConversions.convert(amb, 'F', 'C'))
+    # storage_tank.setAmbientTemperatureSchedule(loc_schedule)
     # storage_tank.setAmbientTemperatureZone # FIXME: What zone do we want to assume the tanks are in?
+
     storage_tank.setUniformSkinLossCoefficientperUnitAreatoAmbientTemperature(tank_u) # FIXME: typical loss values?
-    storage_tank.setSourceSideInletHeight(h_source_in)
-    storage_tank.setSourceSideOutletHeight(h_source_out)
+    # storage_tank.setUniformSkinLossCoefficientperUnitAreatoAmbientTemperature(0) # FIXME: apply_solar_thermal
+    # storage_tank.setSkinLossFractiontoZone(1.0 / unit_multiplier) # Tank losses are multiplied by E+ zone multiplier, so need to compensate here
+    # storage_tank.setSkinLossFractiontoZone(0.0714285714285714) # FIXME: apply_solar_thermal
+    storage_tank.setOffCycleFlueLossCoefficienttoAmbientTemperature(0)
+    # storage_tank.setOffCycleFlueLossFractiontoZone(1.0 / unit_multiplier)
+    # storage_tank.setOffCycleFlueLossFractiontoZone(0.0714285714285714) # FIXME: apply_solar_thermal
+    # storage_tank.setSourceSideInletHeight(h_source_in)
+    storage_tank.setSourceSideInletHeight(h_source_out / 3.0) # FIXME: apply_solar_thermal
+    # storage_tank.setSourceSideOutletHeight(h_source_out)
+    storage_tank.setSourceSideOutletHeight(0) # FIXME: apply_solar_thermal
+    storage_tank.setUseSideInletHeight(0)
+    storage_tank.setUseSideOutletHeight(h_source_out)
     storage_tank.setOffCycleParasiticFuelConsumptionRate(0.0)
     storage_tank.setOnCycleParasiticFuelConsumptionRate(0.0)
-    storage_tank.setNumberofNodes(6)
-    # storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
+    storage_tank.setNumberofNodes(8) # FIXME: apply_solar_thermal
+    storage_tank.setAdditionalDestratificationConductivity(0) # FIXME: apply_solar_thermal
+    storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # storage_tank.setSourceSideDesignFlowRate(UnitConversions.convert(13.6, 'gal/min', 'm^3/s')) # FIXME
-    storage_tank.setEndUseSubcategory(name)
-    storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
-    # storage_tank.setSkinLossFractiontoZone(1.0 / unit_multiplier) # Tank losses are multiplied by E+ zone multiplier, so need to compensate here
-    # storage_tank.setOffCycleFlueLossFractiontoZone(1.0 / unit_multiplier)
-    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
     if demand_side_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
       storage_tank.setHeaterThermalEfficiency(1.0)
       storage_tank.setAdditionalDestratificationConductivity(0)

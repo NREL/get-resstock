@@ -142,7 +142,7 @@ class Pipes
     specific_heat = 390
 
     copper_pipe_material = OpenStudio::Model::StandardOpaqueMaterial.new(model, roughness, thickness, conductivity, density, specific_heat)
-    copper_pipe_material.setName('Return Pipe')
+    copper_pipe_material.setName('Copper Pipe')
     copper_pipe_material.setThermalAbsorptance(0.9)
     copper_pipe_material.setSolarAbsorptance(0.5)
     copper_pipe_material.setVisibleAbsorptance(0.5)

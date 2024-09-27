@@ -3,12 +3,12 @@
   <schema_version>3.1</schema_version>
   <name>add_shared_water_heater</name>
   <uid>1bae0fb1-c46b-4521-8c32-06de67bdeee8</uid>
-  <version_id>f70a1a68-9445-454c-bbe9-d541b23cda1c</version_id>
-  <version_modified>2024-09-25T04:51:38Z</version_modified>
+  <version_id>8396d4d0-0d04-41d4-aec1-c31443bfd393</version_id>
+  <version_modified>2024-09-27T22:21:21Z</version_modified>
   <xml_checksum>8DB48FFA</xml_checksum>
   <class_name>AddSharedWaterHeater</class_name>
   <display_name>AddSharedWaterHeater</display_name>
-  <description>Replace in-unit water heaters and boilers with shared 'heat pump water heater with storage and swing tanks', 'boiler with storage tanks', 'space-heating heat pump water heater with storage and swing tanks', or 'space-heating boiler with storage tanks'. This measure assumes that water use connections (and optionally baseboards) already exist in the model.</description>
+  <description>Replace in-unit water heaters and boilers with shared 'heat pump water heater with storage tanks', 'boiler with storage tanks', 'space-heating heat pump water heater with storage tanks', or 'space-heating boiler with storage tanks'. This measure assumes that water use connections (and optionally baseboards) already exist in the model.</description>
   <modeler_description>Replace existing in-unit hot water loops and associated EMS objects. Add new shared plant loop(s) with water heating (and optionally space-heating) components, including storage and swing tanks.</modeler_description>
   <arguments />
   <outputs />
@@ -38,13 +38,13 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>7FB83205</checksum>
+      <checksum>33E7F4FA</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>6766524D</checksum>
+      <checksum>B835D21D</checksum>
     </file>
     <file>
       <filename>curves.rb</filename>
@@ -68,7 +68,7 @@
       <filename>pipes.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>FF5A86FF</checksum>
+      <checksum>1E0C9D81</checksum>
     </file>
     <file>
       <filename>pumps.rb</filename>
@@ -80,19 +80,19 @@
       <filename>setpoints.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>9B6C017D</checksum>
+      <checksum>3131FEC7</checksum>
     </file>
     <file>
       <filename>supply.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>17EAA228</checksum>
+      <checksum>A998E8F3</checksum>
     </file>
     <file>
       <filename>tanks.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>045A9232</checksum>
+      <checksum>60BF8902</checksum>
     </file>
   </files>
 </measure>

@@ -7,8 +7,8 @@ module Constant
   Boiler = 'boiler'
   SpaceHeating = 'space-heating'
 
-  WaterHeaterTypeHeatPump = "#{HeatPumpWaterHeater} with storage and swing tanks"
+  WaterHeaterTypeHeatPump = "#{HeatPumpWaterHeater} with storage tanks"
   WaterHeaterTypeBoiler = "#{Boiler} with storage tanks"
-  WaterHeaterTypeCombiHeatPump = "#{SpaceHeating} #{HeatPumpWaterHeater} with storage and swing tanks"
+  WaterHeaterTypeCombiHeatPump = "#{SpaceHeating} #{HeatPumpWaterHeater} with storage tanks"
   WaterHeaterTypeCombiBoiler = "#{SpaceHeating} #{Boiler} with storage tanks"
 end

@@ -72,8 +72,8 @@ class Supply
       component.setNominalThermalEfficiency(boiler_eff_afue)
       component.setNominalCapacity(capacity)
       component.setFuelType(EPlus.fuel_type(fuel_type))
-      component.setMinimumPartLoadRatio(0.0) # FIXME: default
-      # component.setMinimumPartLoadRatio(0.2) # FIXME: hand calculation
+      # component.setMinimumPartLoadRatio(0.0) # FIXME: default
+      component.setMinimumPartLoadRatio(0.2) # FIXME: hand calculation; this w/GAHP is pretty good, and you don't need AVM
       component.setMaximumPartLoadRatio(1.0)
       component.setOptimumPartLoadRatio(1.0)
       component.setBoilerFlowMode('LeavingSetpointModulated')

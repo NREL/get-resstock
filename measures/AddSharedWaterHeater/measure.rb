@@ -51,6 +51,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       runner.registerWarning("AddSharedWaterHeater: Could not find '#{hpxml_path}'.")
       return true
     end
+    # return true # FIXME
 
     # Extension properties
     hpxml_bldg = hpxml.buildings[0]
@@ -152,11 +153,15 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     Pipes.create_indoor(model, dhw_loop, supply_length, return_length, supply_ins_r, return_ins_r, num_units)
 
     # Add Pumps
+    dhw_pump_w = pump_w
     Pumps.create_constant_speed(model, dhw_loop, dhw_pump_gpm, pump_head, pump_w, 'Continuous')
+    supply_pump_w = pump_w
     supply_loops.each do |supply_loop, _|
-      Pumps.create_constant_speed(model, supply_loop, supply_pump_gpm, pump_head, pump_w)
+      Pumps.create_constant_speed(model, supply_loop, supply_pump_gpm, pump_head, supply_pump_w)
     end
-    Pumps.create_constant_speed(model, storage_loop, storage_pump_gpm, pump_head, 0)
+    storage_pump_w = 0.0
+    Pumps.create_constant_speed(model, storage_loop, storage_pump_gpm, pump_head, storage_pump_w)
+    space_heating_pump_w = pump_w
     Pumps.create_constant_speed(model, space_heating_loop, space_heating_pump_gpm, pump_head, pump_w)
 
     # Add Setpoint Managers
@@ -255,11 +260,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       # Setpoints.create_availability(model, supply_loop, hot_node, cold_node)
     end
 
-    heat_pump_inlet = 120.0 # FIXME: try with and without this change
+    heat_pump_inlet = 90.0 # FIXME: try with and without this change
+    # heat_pump_inlet = 120.0 # FIXME: try with and without this change
     if shared_water_heater_type.include?(Constant::HeatPumpWaterHeater)
       backup_node = storage_loop.supplyInletNode
       boiler_loops.each do |supply_loop, _components|
-        Setpoints.create_availability(model, supply_loop, backup_node, nil, heat_pump_inlet)
+        # Setpoints.create_availability(model, supply_loop, backup_node, nil, heat_pump_inlet)
       end
     end
 
