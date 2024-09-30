@@ -13,6 +13,7 @@ class Tanks
   def self.get_storage_volumes(_model, type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
     # gal
     gal_per_unit = 2.6 * 4.8 / 0.7 # FIXME
+    # gal_per_unit /= 2 # FIXME
 
     boiler_storage_tank_volume = 0.0
     heat_pump_storage_tank_volume = 0.0
@@ -23,11 +24,11 @@ class Tanks
     if !type.include?(Constant::SpaceHeating)
       boiler_storage_tank_volume *= 1
     else
-      boiler_storage_tank_volume *= 1
+      boiler_storage_tank_volume *= 2
     end
 
     # boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
-    boiler_storage_tank_volume = 480.0 # FIXME
+    # boiler_storage_tank_volume = 480.0 # FIXME
 
     if type.include?(Constant::HeatPumpWaterHeater)
 
@@ -36,11 +37,11 @@ class Tanks
       if !type.include?(Constant::SpaceHeating)
         heat_pump_storage_tank_volume *= 1
       else
-        heat_pump_storage_tank_volume *= 1
+        heat_pump_storage_tank_volume *= 2
       end
 
       # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
-      heat_pump_storage_tank_volume = 120.0 # FIXME
+      # heat_pump_storage_tank_volume = 120.0 # FIXME
 
       if type.include?(Constant::SpaceHeating)
         boiler_storage_tank_volume *= boiler_backup_sh_frac # FIXME

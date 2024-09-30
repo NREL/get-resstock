@@ -44,7 +44,7 @@ class Supply
   def self.get_supply_capacities(model, type, boiler_backup_wh_frac, boiler_backup_sh_frac)
     # W
     water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 # FIXME
-    space_heating_capacity = get_total_space_heating_capacity(model) # FIXME
+    space_heating_capacity = get_total_space_heating_capacity(model) * 0.6 # FIXME
 
     boiler_capacity = water_heating_capacity
     if type.include?(Constant::SpaceHeating)
@@ -111,8 +111,8 @@ class Supply
         # component.setFlowMode('LeavingSetpointModulated') # FIXME: this zeros out Fuel-fired Absorption HeatPump Electricity Energy: Supply Loop 1 Water Heater
         # component.setFlowMode('ConstantFlow')
         # component.setWaterTemperatureCurveInputVariable('LeavingCondenser') # FIXME
-        component.setMinimumPartLoadRatio(0.1) # FIXME: default
-        # component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
+        # component.setMinimumPartLoadRatio(0.1) # FIXME: default
+        component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
         component.setMaximumPartLoadRatio(1.0)
         component.setDefrostControlType('OnDemand')
         component.setDefrostOperationTimeFraction(0.0)
