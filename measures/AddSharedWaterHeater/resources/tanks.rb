@@ -94,7 +94,8 @@ class Tanks
     storage_tank.setEndUseSubcategory(name)
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setTankHeight(h_tank)
-    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
+    # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME: set this to 90C?
+    # storage_tank.setMaximumTemperatureLimit(99)
     storage_tank.setHeater1SetpointTemperatureSchedule(setpoint_schedule)
     storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2SetpointTemperatureSchedule(setpoint_schedule)
