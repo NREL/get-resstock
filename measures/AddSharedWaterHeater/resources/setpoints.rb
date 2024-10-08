@@ -5,15 +5,17 @@ class Setpoints
     # deg-F
     dhw_loop_sp = 135.0
     if type == Constant::WaterHeaterTypeBoiler
-      boiler_loop_sp = 140.0 # FIXME: should this just be 140 since we don't need 180?
+      boiler_loop_sp = 140.0
       heat_pump_loop_sp = nil
       storage_loop_sp = 140.0
       space_heating_loop_sp = nil
+
     elsif type == Constant::WaterHeaterTypeHeatPump
-      boiler_loop_sp = 140.0 # FIXME: should this just be 140 since we don't need 180?
+      boiler_loop_sp = 140.0
       heat_pump_loop_sp = 140.0
       storage_loop_sp = 140.0
       space_heating_loop_sp = nil
+
     elsif type == Constant::WaterHeaterTypeCombiBoiler
       space_heat_sp = 140.0
 
@@ -26,6 +28,40 @@ class Setpoints
 
       boiler_loop_sp = space_heat_sp
       heat_pump_loop_sp = 140.0
+      storage_loop_sp = space_heat_sp
+      space_heating_loop_sp = space_heat_sp
+    end
+
+    return dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp
+  end
+
+  def self.get_loop_setpoints(type)
+    # deg-F
+    dhw_loop_sp = 130.0
+    if type == Constant::WaterHeaterTypeBoiler
+      boiler_loop_sp = dhw_loop_sp
+      heat_pump_loop_sp = nil
+      storage_loop_sp = dhw_loop_sp
+      space_heating_loop_sp = nil
+
+    elsif type == Constant::WaterHeaterTypeHeatPump
+      boiler_loop_sp = dhw_loop_sp
+      heat_pump_loop_sp = dhw_loop_sp
+      storage_loop_sp = dhw_loop_sp
+      space_heating_loop_sp = nil
+
+    elsif type == Constant::WaterHeaterTypeCombiBoiler
+      space_heat_sp = dhw_loop_sp
+
+      boiler_loop_sp = space_heat_sp
+      heat_pump_loop_sp = nil
+      storage_loop_sp = space_heat_sp
+      space_heating_loop_sp = space_heat_sp
+    elsif type == Constant::WaterHeaterTypeCombiHeatPump
+      space_heat_sp = dhw_loop_sp
+
+      boiler_loop_sp = space_heat_sp
+      heat_pump_loop_sp = dhw_loop_sp
       storage_loop_sp = space_heat_sp
       space_heating_loop_sp = space_heat_sp
     end
