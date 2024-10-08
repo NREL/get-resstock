@@ -88,7 +88,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Setpoints
-    dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_designs(shared_water_heater_type)
+    dhw_loop_des, boiler_loop_des, heat_pump_loop_des, storage_loop_des, space_heating_loop_des = Setpoints.get_loop_designs(shared_water_heater_type)
+    dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_setpoints(shared_water_heater_type)
 
     # Pumps
     pump_head = Pumps.get_rated_head(shared_water_heater_type)
@@ -117,19 +118,19 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     space_heating_loop_sp_schedule = Setpoints.create_schedule(model, space_heating_loop_sp)
 
     # Add Loops
-    dhw_loop = Loops.create_plant(model, 'DHW Loop', dhw_loop_sp, 10.0, dhw_loop_gpm, num_units)
+    dhw_loop = Loops.create_plant(model, 'DHW Loop', dhw_loop_des, 10.0, dhw_loop_gpm, num_units)
     boiler_loops = {}
     (1..boiler_count).to_a.each do |i|
-      boiler_loop = Loops.create_plant(model, "Supply Boiler Loop #{i}", boiler_loop_sp, 20.0, supply_loop_gpm)
+      boiler_loop = Loops.create_plant(model, "Supply Boiler Loop #{i}", boiler_loop_des, 20.0, supply_loop_gpm)
       boiler_loops[boiler_loop] = []
     end
     heat_pump_loops = {}
     (1..heat_pump_count).to_a.each do |i|
-      heat_pump_loop = Loops.create_plant(model, "Supply Heat Pump Loop #{i}", heat_pump_loop_sp, 20.0, supply_loop_gpm)
+      heat_pump_loop = Loops.create_plant(model, "Supply Heat Pump Loop #{i}", heat_pump_loop_des, 20.0, supply_loop_gpm)
       heat_pump_loops[heat_pump_loop] = []
     end
-    storage_loop = Loops.create_plant(model, 'Storage Loop', storage_loop_sp, 20.0, storage_loop_gpm)
-    space_heating_loop = Loops.create_plant(model, 'Space Heating Loop', space_heating_loop_sp, 20.0, space_heating_loop_gpm) if shared_water_heater_type.include?(Constant::SpaceHeating)
+    storage_loop = Loops.create_plant(model, 'Storage Loop', storage_loop_des, 20.0, storage_loop_gpm)
+    space_heating_loop = Loops.create_plant(model, 'Space Heating Loop', space_heating_loop_des, 20.0, space_heating_loop_gpm) if shared_water_heater_type.include?(Constant::SpaceHeating)
 
     supply_loops = heat_pump_loops.merge(boiler_loops)
 
