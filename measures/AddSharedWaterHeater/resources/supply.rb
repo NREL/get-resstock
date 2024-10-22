@@ -41,7 +41,7 @@ class Supply
     return total_space_heating_capacity
   end
 
-  def self.get_supply_capacities(model, type, boiler_backup_wh_frac, boiler_backup_sh_frac)
+  def self.get_supply_capacities(model, type)
     # W
     water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 # FIXME
     space_heating_capacity = get_total_space_heating_capacity(model) * 0.6 # FIXME
@@ -54,12 +54,6 @@ class Supply
     heat_pump_capacity = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
       heat_pump_capacity = 36194.0
-
-      if type.include?(Constant::SpaceHeating)
-        boiler_capacity *= boiler_backup_sh_frac # FIXME
-      else
-        boiler_capacity *= boiler_backup_wh_frac # FIXME
-      end
     end
 
     return boiler_capacity, heat_pump_capacity

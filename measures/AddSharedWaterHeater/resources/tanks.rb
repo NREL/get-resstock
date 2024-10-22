@@ -10,7 +10,27 @@ class Tanks
     return UnitConversions.convert(total_water_heating_tank_volume, 'm^3', 'gal')
   end
 
-  def self.get_storage_volumes(_model, type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
+  def self.min_tank_size_by_cec_climate_zone(cec_climate_zone)
+    if ['1'].include?(cec_climate_zone)
+      return 214
+    elsif ['16'].include?(cec_climate_zone)
+      return 220
+    elsif ['2', '3', '5'].include?(cec_climate_zone)
+      return 238
+    elsif ['4', '12'].include?(cec_climate_zone)
+      return 255
+    elsif ['6', '7', '11', '14'].include?(cec_climate_zone)
+      return 264
+    elsif ['9'].include?(cec_climate_zone)
+      return 268
+    elsif ['8', '10', '13'].include?(cec_climate_zone)
+      return 273
+    elsif ['15'].include?(cec_climate_zone)
+      return 336
+    end
+  end
+
+  def self.get_storage_volumes(_model, type, num_units, cec_climate_zone)
     # gal
     gal_per_unit = 2.6 * 4.8 / 0.7 # FIXME
     # gal_per_unit /= 2 # FIXME
@@ -32,7 +52,8 @@ class Tanks
 
     if type.include?(Constant::HeatPumpWaterHeater)
 
-      heat_pump_storage_tank_volume = gal_per_unit * num_units
+      # heat_pump_storage_tank_volume = gal_per_unit * num_units
+      heat_pump_storage_tank_volume = min_tank_size_by_cec_climate_zone(cec_climate_zone)
 
       if !type.include?(Constant::SpaceHeating)
         heat_pump_storage_tank_volume *= 1
@@ -42,12 +63,6 @@ class Tanks
 
       # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
       # heat_pump_storage_tank_volume = 120.0 # FIXME
-
-      if type.include?(Constant::SpaceHeating)
-        boiler_storage_tank_volume *= boiler_backup_sh_frac # FIXME
-      else
-        boiler_storage_tank_volume *= boiler_backup_wh_frac # FIXME
-      end
     end
 
     return boiler_storage_tank_volume, heat_pump_storage_tank_volume

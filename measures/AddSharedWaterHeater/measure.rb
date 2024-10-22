@@ -60,6 +60,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     shared_water_heater_type = hpxml_bldg.header.extension_properties['shared_water_heater_type']
     shared_water_heater_fuel_type = hpxml_bldg.header.extension_properties['shared_water_heater_fuel_type']
     shared_boiler_efficiency_afue = hpxml_bldg.header.extension_properties['shared_boiler_efficiency_afue'].to_f
+    cec_climate_zone = hpxml_bldg.header.extension_properties['cec_climate_zone']
     include_swing_tank = false # FIXME: true if electric heat pump
 
     # Skip measure if no shared heating system
@@ -76,15 +77,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # num_units = hpxml.buildings.size
     # num_beds = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_bedrooms }.sum
 
-    # Supply
-    boiler_backup_wh_frac = 1 # FIXME
-    boiler_backup_sh_frac = 1 # FIXME
-
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units)
-    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, boiler_backup_wh_frac, boiler_backup_sh_frac)
+    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type)
 
     # Tanks
-    boiler_storage_tank_volume, heat_pump_storage_tank_volume = Tanks.get_storage_volumes(model, shared_water_heater_type, num_units, boiler_backup_wh_frac, boiler_backup_sh_frac)
+    boiler_storage_tank_volume, heat_pump_storage_tank_volume = Tanks.get_storage_volumes(model, shared_water_heater_type, num_units, cec_climate_zone)
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Setpoints

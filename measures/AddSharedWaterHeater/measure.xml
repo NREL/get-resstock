@@ -3,8 +3,8 @@
   <schema_version>3.1</schema_version>
   <name>add_shared_water_heater</name>
   <uid>1bae0fb1-c46b-4521-8c32-06de67bdeee8</uid>
-  <version_id>8396d4d0-0d04-41d4-aec1-c31443bfd393</version_id>
-  <version_modified>2024-09-27T22:21:21Z</version_modified>
+  <version_id>610f46bb-afbd-4633-a976-8646ed8ca1b0</version_id>
+  <version_modified>2024-10-22T18:54:47Z</version_modified>
   <xml_checksum>8DB48FFA</xml_checksum>
   <class_name>AddSharedWaterHeater</class_name>
   <display_name>AddSharedWaterHeater</display_name>
@@ -38,7 +38,7 @@
       <filename>measure.rb</filename>
       <filetype>rb</filetype>
       <usage_type>script</usage_type>
-      <checksum>33E7F4FA</checksum>
+      <checksum>DAA2B3CD</checksum>
     </file>
     <file>
       <filename>constants.rb</filename>
@@ -80,19 +80,19 @@
       <filename>setpoints.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>3131FEC7</checksum>
+      <checksum>11D301A1</checksum>
     </file>
     <file>
       <filename>supply.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>A998E8F3</checksum>
+      <checksum>4D9D2F38</checksum>
     </file>
     <file>
       <filename>tanks.rb</filename>
       <filetype>rb</filetype>
       <usage_type>resource</usage_type>
-      <checksum>60BF8902</checksum>
+      <checksum>C1CCACA8</checksum>
     </file>
   </files>
 </measure>

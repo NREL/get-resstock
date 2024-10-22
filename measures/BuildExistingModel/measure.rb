@@ -341,38 +341,30 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     # AddSharedWaterHeater measure
     shared_water_heater_type = 'none'
     shared_water_heater_fuel_type = 'none'
-    if bldg_data['Water Heater In Unit'] == 'No'
+
+    num_units = 1
+    resstock_arguments_runner.result.stepValues.each do |step_value|
+      if step_value.name == 'geometry_building_num_units'
+        num_units = Integer(get_value_from_workflow_step_value(step_value))
+      end
+    end
+
+    if (num_units >= 20) && (bldg_data['Water Heater In Unit'] == 'No')
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
-      hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
-      hvac_heating_type_and_fuel = bldg_data['HVAC Heating Type And Fuel']
-
       if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium') || water_heater_efficiency.include?('Natural Gas Heat Pump')
-        if hvac_shared_efficiencies == 'None'
-          if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium')
-            shared_water_heater_type = Constant::WaterHeaterTypeBoiler
-
-            shared_boiler_efficiency_afue = 0.8
-            if water_heater_efficiency.end_with?('Premium')
-              shared_boiler_efficiency_afue = 0.85
-            elsif water_heater_efficiency.end_with?('Premium, Condensing')
-              shared_boiler_efficiency_afue = 0.9
-            end
-          elsif water_heater_efficiency.include?('Natural Gas Heat Pump')
-            shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
-          end
-        elsif hvac_heating_type_and_fuel == 'Natural Gas Shared Heating'
+        if water_heater_efficiency.include?('Natural Gas Heat Pump')
+          shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        else
+          shared_water_heater_type = Constant::WaterHeaterTypeBoiler
+        end
+        if water_heater_efficiency.include?('Standard')
           shared_boiler_efficiency_afue = 0.8
-          if hvac_shared_efficiencies.include?('Boiler')
-            shared_water_heater_type = Constant::WaterHeaterTypeCombiBoiler
-
-            if hvac_shared_efficiencies.end_with?('90% AFUE')
-              shared_boiler_efficiency_afue = 0.9
-            end
-          elsif hvac_shared_efficiencies.include?('Natural Gas Heat Pump')
-            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
-          end
+        elsif water_heater_efficiency.end_with?('Premium')
+          shared_boiler_efficiency_afue = 0.85
+        elsif water_heater_efficiency.end_with?('Premium, Condensing')
+          shared_boiler_efficiency_afue = 0.9
         end
       end
 
@@ -383,6 +375,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
     geometry_corridor_position = bldg_data['Corridor']
+    cec_climate_zone = bldg_data['CEC Climate Zone']
 
     # Optional whole SFA/MF building simulation and unit multipliers
     whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
@@ -390,15 +383,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     geometry_building_num_units = 1
     if whole_sfa_or_mf_building_sim
-      resstock_arguments_runner.result.stepValues.each do |step_value|
-        if step_value.name == 'geometry_building_num_units'
-          geometry_building_num_units = Integer(get_value_from_workflow_step_value(step_value))
-        end
-      end
+      geometry_building_num_units = num_units
     end
 
     num_units_modeled = 1
-    max_num_units_modeled = 10 # FIXME: 2 for testing, 5 for production?
+    max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
     unit_multipliers = []
     if use_unit_multipliers
       if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
@@ -454,6 +443,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "shared_water_heater_type=#{shared_water_heater_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
+      additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version
