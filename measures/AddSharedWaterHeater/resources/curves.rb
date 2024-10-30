@@ -12,6 +12,14 @@ class Curves
     t_ret.setName("#{component.name} Tret")
     t_ret.setKeyName(component.name.to_s)
 
+    e_gahp = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Fuel-fired Absorption HeatPump Fuel Energy')
+    e_gahp.setName("#{component.name} Energy")
+    e_gahp.setKeyName(component.name.to_s)
+
+    tvar = OpenStudio::Model::EnergyManagementSystemTrendVariable.new(model, e_gahp)
+    tvar.setName("#{e_gahp.name} trendvar")
+    tvar.setNumberOfTimestepsToBeLogged(1)
+
     program_cm = OpenStudio::Model::EnergyManagementSystemProgramCallingManager.new(model)
     program_cm.setName('GAHP Curves PCM')
     program_cm.setCallingPoint('InsideHVACSystemIterationLoop')
@@ -96,7 +104,24 @@ class Curves
     program.addLine('Set d2 = 0.00699*Tret')
     program.addLine('Set e2 = -0.0001215*Tamb*Tret')
     program.addLine('Set f2 = 0.0000005196*(Tamb^2)*Tret')
-    program.addLine("Set #{actuator.name} = a2 + b2 + c2 + d2 + e2 + f2")
+    program.addLine("Set gahp_1_ago = @TrendValue #{tvar.name} 1")
+    program.addLine('Set eir_mult = 1.0')
+    program.addLine("If gahp_1_ago == 0 && #{e_gahp.name} > 0")
+    program.addLine('Set eir_mult = (1.0 / 0.5383)') # COP degradation
+    program.addLine('EndIf')
+    program.addLine("Set #{actuator.name} = (a2 + b2 + c2 + d2 + e2 + f2) * eir_mult")
+
+    ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, 'eir_mult')
+    ems_output_var.setName('eir_mult_output')
+    ems_output_var.setTypeOfDataInVariable('Averaged')
+    ems_output_var.setUpdateFrequency('SystemTimestep')
+    ems_output_var.setEMSProgramOrSubroutineName(program)
+
+    ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, 'gahp_1_ago')
+    ems_output_var.setName('gahp_1_ago_output')
+    ems_output_var.setTypeOfDataInVariable('Summed')
+    ems_output_var.setUpdateFrequency('SystemTimestep')
+    ems_output_var.setEMSProgramOrSubroutineName(program)
 
     ems_output_var = OpenStudio::Model::EnergyManagementSystemOutputVariable.new(model, "#{actuator.name}")
     ems_output_var.setName("#{actuator.name} Output")

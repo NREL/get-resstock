@@ -22,7 +22,7 @@ workflow_generator:
   version: 2024.07.20
   args:
     build_existing_model:
-      simulation_control_timestep: 60
+      simulation_control_timestep: 15
       simulation_control_run_period_begin_month: 1
       simulation_control_run_period_begin_day_of_month: 1
       simulation_control_run_period_end_month: 12
@@ -57,13 +57,25 @@ workflow_generator:
       include_timeseries_weather: false
       include_timeseries_resilience: false
       output_variables:
+        - name: Boiler NaturalGas Energy
+        - name: Fuel-fired Absorption HeatPump Fuel Energy
+        - name: Boiler Inlet Temperature
+        - name: Boiler Outlet Temperature
+        - name: Fuel-fired Absorption HeatPump Inlet Temperature
+        - name: Fuel-fired Absorption HeatPump Outlet Temperature
+        - name: Water Heater Tank Temperature
+        - name: Performance Curve Output Value
+        - name: CapCurveFuncTempAct Output
+        - name: EIRCurveFuncTempAct Output
+        - name: AuxElecEIRCurveFuncTempCurveAct Output
+        - name: eir_mult_output
+        - name: gahp_1_ago_output
+        - name: Site Mains Water Temperature
         # - name: Water Heater NaturalGas Energy
         # - name: Boiler Heating Energy
-        - name: Boiler NaturalGas Energy
         # - name: Boiler Ancillary NaturalGas Energy
         # - name: Boiler Ancillary Electricity Energy
         # - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy
-        - name: Fuel-fired Absorption HeatPump Fuel Energy
         # - name: Fuel-fired Absorption HeatPump Electricity Energy
         # - name: Schedule Value
         # - name: Water Use Connections Hot Water Volume
@@ -78,27 +90,17 @@ workflow_generator:
         # - name: Water Heater Source Side Outlet Temperature
         # - name: Water Heater Use Side Inlet Temperature
         # - name: Water Heater Use Side Outlet Temperature
-        - name: Boiler Inlet Temperature
-        - name: Boiler Outlet Temperature
-        - name: Fuel-fired Absorption HeatPump Inlet Temperature
-        - name: Fuel-fired Absorption HeatPump Outlet Temperature
         # - name: Pump Fluid Heat Gain Rate
         # - name: Pump Fluid Heat Gain Energy
         # - name: Water Heater Heat Loss Rate
-        - name: Water Heater Tank Temperature
         # - name: Water Heater Use Side Heat Transfer Energy
         # - name: Water Heater Temperature Node 1 # use side outlet and source side inlet
         # - name: Water Heater Temperature Node 6 # use side inlet and source side outlet
         # - name: Performance Curve Input Variable 1 Value
         # - name: Performance Curve Input Variable 2 Value
-        - name: Performance Curve Output Value
         # - name: Pump Electricity Energy
         # - name: Site Outdoor Air Drybulb Temperature
-        # - name: CapCurveFuncTempAct Output
-        # - name: EIRCurveFuncTempAct Output
-        # - name: AuxElecEIRCurveFuncTempCurveAct Output
         # - name: Schedule Value
-        - name: Site Mains Water Temperature
         # - name: Availability Manager Differential Thermostat Control Status
         # - name: Availability Manager Low Temperature Turn On Control Status
         # - name: Availability Manager High Temperature Turn Off Control Status
