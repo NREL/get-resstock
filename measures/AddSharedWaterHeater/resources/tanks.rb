@@ -32,14 +32,26 @@ class Tanks
 
   def self.get_storage_volumes(_model, type, num_units, cec_climate_zone)
     # gal
-    gal_per_unit = 2.6 * 4.8 / 0.7 # FIXME
+
+    # Assuming medium usage (ASHRAE Handbook of HVAC and Applications Chapter 50 Table 7)
+    wh_eff = 0.8 # Assuming boiler efficiency of 0.8 (use AFUE for existing boiler)
+    num_occ = 2.6*num_units #FIXME: get exact number of occupants
+    t_hot = 130.0 #FIXME: get the actual boiler setpoint temperature
+    t_cold = 40.0 #FIXME: get the average mains temperature here
+
+    gal_per_person = 4.8  # Assuming Medium usage and 60 minutes of peak usage (ASHRAE Handbook of HVAC Applications Chapter 50 Table 7)
+    cumulative_hw_volume = gal_per_person * num_occ
+    # Boiler storage tank volume
+    boiler_storage_tank_volume = cumulative_hw_volume / 0.7
+    average_hw_flow = cumulative_hw_volume / 60.0
+    
+    # Water heating rate
+    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / wh_eff # Water heating rate = m_dot * cp * deltaT /efficiency (to be compared with burner capacity later)
+
+    gal_per_unit = cumulative_hw_volume / num_units # FIXME
     # gal_per_unit /= 2 # FIXME
 
-    boiler_storage_tank_volume = 0.0
     heat_pump_storage_tank_volume = 0.0
-
-    # boiler_storage_tank_volume = get_total_water_heating_tank_volume(model)
-    boiler_storage_tank_volume = gal_per_unit * num_units
 
     if !type.include?(Constant::SpaceHeating)
       boiler_storage_tank_volume *= 1
