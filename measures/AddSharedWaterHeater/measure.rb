@@ -73,6 +73,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     unit_multipliers = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units }
     num_units = unit_multipliers.sum
     num_beds = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_construction.number_of_bedrooms }.sum
+    num_occs = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_occupancy.number_of_residents }.sum
     # FIXME: should these be relative to the number of MODELED units? i.e., hpxml.buildings.size? sounds like maybe no?
     # num_units = hpxml.buildings.size
     # num_beds = hpxml.buildings.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_bedrooms }.sum
@@ -81,7 +82,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type)
 
     # Tanks
-    boiler_storage_tank_volume, heat_pump_storage_tank_volume = Tanks.get_storage_volumes(model, shared_water_heater_type, num_units, cec_climate_zone)
+    boiler_storage_tank_volume = Tanks.get_boiler_storage_volume(num_units, num_occs)
+    heat_pump_storage_tank_volume = Tanks.get_heat_pump_storage_volume(shared_water_heater_type, cec_climate_zone)
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Setpoints
@@ -267,6 +269,16 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       end
     end
 
+    # Water heating rate = m_dot * cp * deltaT / efficiency (to be compared with burner capacity later)
+    t_hot = boiler_loop_sp
+    site_water_mains_temperature = model.getSiteWaterMainsTemperature
+    temperature_schedule = site_water_mains_temperature.temperatureSchedule.get
+    avg_tmains = UnitConversions.convert(temperature_schedule.to_ScheduleInterval.get.timeSeries.averageValue, 'C', 'F')
+    t_cold = avg_tmains
+    cumulative_hw_volume = boiler_storage_tank_volume * 0.7
+    average_hw_flow = cumulative_hw_volume / 60.0
+    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+
     # Re-connect WaterUseConections (in series) with PipeIndoors
     reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop)
 
@@ -286,6 +298,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('num_units', num_units)
     runner.registerValue('num_beds', num_beds)
     runner.registerValue('boiler_count', boiler_count)
+    runner.registerValue('boiler_capacity_w', boiler_capacity)
+    runner.registerValue('boiler_capacity_q_hw_w', q_hw)
     runner.registerValue('heat_pump_count', heat_pump_count)
     runner.registerValue('length_ft_supply', supply_length)
     runner.registerValue('length_ft_return', return_length)
@@ -298,6 +312,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('loop_sp_storage', storage_loop_sp) if !storage_loop_sp.nil?
     runner.registerValue('loop_sp_dhw', dhw_loop_sp) if !dhw_loop_sp.nil?
     runner.registerValue('loop_sp_space_heating', space_heating_loop_sp) if !space_heating_loop_sp.nil?
+    runner.registerValue('mains_average_f', avg_tmains)
     runner.registerValue('tank_volume_storage_boiler', boiler_storage_tank_volume)
     runner.registerValue('tank_volume_storage_heat_pump', heat_pump_storage_tank_volume)
     runner.registerValue('tank_volume_swing', swing_tank_volume)
