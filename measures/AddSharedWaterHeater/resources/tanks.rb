@@ -91,6 +91,7 @@ class Tanks
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
 
     storage_tank.setEndUseSubcategory(name)
+    volume = [0.0001, volume].max # FIXME: this will set 0.1893 m^3/s (50 gal) if we try to set 0 volume
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setTankHeight(h_tank)
     # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME: set this to 90C?

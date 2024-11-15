@@ -90,6 +90,17 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     dhw_loop_des, boiler_loop_des, heat_pump_loop_des, storage_loop_des, space_heating_loop_des = Setpoints.get_loop_designs(shared_water_heater_type)
     dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_setpoints(shared_water_heater_type)
 
+    # Water heating rate = m_dot * cp * deltaT / efficiency (to be compared with burner capacity later)
+    t_hot = boiler_loop_sp
+    site_water_mains_temperature = model.getSiteWaterMainsTemperature
+    temperature_schedule = site_water_mains_temperature.temperatureSchedule.get
+    avg_tmains = UnitConversions.convert(temperature_schedule.to_ScheduleInterval.get.timeSeries.averageValue, 'C', 'F')
+    t_cold = avg_tmains
+    cumulative_hw_volume = boiler_storage_tank_volume * 0.7
+    average_hw_flow = cumulative_hw_volume / 60.0
+    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+    # boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
+
     # Pumps
     pump_head = Pumps.get_rated_head(shared_water_heater_type)
     pump_w = Pumps.get_rated_power_consumption(shared_water_heater_type)
@@ -101,10 +112,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     supply_ins_r, return_ins_r = Pipes.get_recirc_ins_r_value()
 
     # Flows
-    dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # OS-HPXML ###
-    dhw_loop_gpm = nil # FIXME
+    dhw_loop_gpm = UnitConversions.convert(0.01, 'm^3/s', 'gal/min') * num_units # FIXME: this is what OS-HPXML has for this loop
+    # dhw_loop_gpm = nil # FIXME
     dhw_pump_gpm, swing_tank_capacity = Pipes.calc_recirc_flow_rate(hpxml.buildings, supply_length, supply_ins_r, swing_tank_volume)
-    dhw_pump_gpm = nil # FIXME
+    # dhw_pump_gpm *= num_units # FIXME: is this right?
+    # dhw_pump_gpm = nil # FIXME
 
     supply_loop_gpm, storage_loop_gpm, space_heating_loop_gpm = Loops.get_flow_rates(shared_water_heater_type)
     supply_pump_gpm, storage_pump_gpm, space_heating_pump_gpm = Pumps.get_flow_rates(shared_water_heater_type)
@@ -269,16 +281,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       end
     end
 
-    # Water heating rate = m_dot * cp * deltaT / efficiency (to be compared with burner capacity later)
-    t_hot = boiler_loop_sp
-    site_water_mains_temperature = model.getSiteWaterMainsTemperature
-    temperature_schedule = site_water_mains_temperature.temperatureSchedule.get
-    avg_tmains = UnitConversions.convert(temperature_schedule.to_ScheduleInterval.get.timeSeries.averageValue, 'C', 'F')
-    t_cold = avg_tmains
-    cumulative_hw_volume = boiler_storage_tank_volume * 0.7
-    average_hw_flow = cumulative_hw_volume / 60.0
-    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
-
     # Re-connect WaterUseConections (in series) with PipeIndoors
     reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop)
 
@@ -313,6 +315,10 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('loop_sp_dhw', dhw_loop_sp) if !dhw_loop_sp.nil?
     runner.registerValue('loop_sp_space_heating', space_heating_loop_sp) if !space_heating_loop_sp.nil?
     runner.registerValue('mains_average_f', avg_tmains)
+    runner.registerValue('pump_gpm_supply', supply_pump_gpm) if !supply_pump_gpm.nil?
+    runner.registerValue('pump_gpm_storage', storage_pump_gpm) if !storage_pump_gpm.nil?
+    runner.registerValue('pump_gpm_dhw', dhw_pump_gpm) if !dhw_pump_gpm.nil?
+    runner.registerValue('pump_gpm_space_heating', space_heating_pump_gpm) if !space_heating_pump_gpm.nil?
     runner.registerValue('tank_volume_storage_boiler', boiler_storage_tank_volume)
     runner.registerValue('tank_volume_storage_heat_pump', heat_pump_storage_tank_volume)
     runner.registerValue('tank_volume_swing', swing_tank_volume)

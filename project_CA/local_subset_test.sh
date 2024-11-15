@@ -1,0 +1,2 @@
+/c/openstudio-3.8.0/bin/openstudio.exe workflow/run_analysis.rb -y project_CA/scenario_3.yml -o -k -n 16
+/c/openstudio-3.8.0/bin/openstudio.exe workflow/run_analysis.rb -y project_CA/scenario_5.yml -o -k -n 16
