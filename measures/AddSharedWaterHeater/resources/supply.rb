@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_counts(type, _num_beds, _num_units)
+  def self.get_supply_counts(type, _num_beds, num_units)
     boiler_count = 1
     heat_pump_count = 0
 
@@ -11,10 +11,9 @@ class Supply
       # FIXME: How to adjust size when used for space heating?
       # heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
       # heat_pump_count = [1, heat_pump_count].max # FIXME: min
-      heat_pump_count = 1
+      # heat_pump_count = 1
+      heat_pump_count = [(num_units / 60.0).ceil, 5].min
 
-      # boiler_count = 0 # FIXME
-      boiler_count = 1 # FIXME
       if type.include?(Constant::SpaceHeating)
         # heat_pump_count += 0 # FIXME
       end
@@ -59,7 +58,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, name, capacity, boiler_eff_afue, t_amb)
+  def self.create_component(model, type, fuel_type, supply_side_loop, name, capacity, boiler_eff_afue, t_amb, num_units)
     if type.include?(Constant::Boiler)
       component = OpenStudio::Model::BoilerHotWater.new(model)
       component.setName(name)
@@ -106,7 +105,11 @@ class Supply
         # component.setFlowMode('ConstantFlow')
         # component.setWaterTemperatureCurveInputVariable('LeavingCondenser') # FIXME
         # component.setMinimumPartLoadRatio(0.1) # FIXME: default
-        component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
+        if num_units < 20
+          component.setMinimumPartLoadRatio(0.25)
+        else # 20+
+          component.setMinimumPartLoadRatio(0.456) # FIXME: hand calculation
+        end
         component.setMaximumPartLoadRatio(1.0)
         component.setDefrostControlType('OnDemand')
         component.setDefrostOperationTimeFraction(0.0)

@@ -99,7 +99,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     cumulative_hw_volume = boiler_storage_tank_volume * 0.7
     average_hw_flow = cumulative_hw_volume / 60.0
     q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
-    # boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
+    boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
 
     # Pumps
     pump_head = Pumps.get_rated_head(shared_water_heater_type)
@@ -237,12 +237,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Supply Components
     boiler_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb)
+      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
       components << component
     end
     backup_node = nil
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue, t_amb)
+      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
       components << component
 
       # backup_node = component.inletModelObject.get.to_Node.get if backup_node.nil?

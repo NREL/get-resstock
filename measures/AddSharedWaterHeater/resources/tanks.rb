@@ -30,11 +30,14 @@ class Tanks
     end
   end
 
-  def self.get_boiler_storage_volume(_num_units, num_occs)
+  def self.get_boiler_storage_volume(num_units, num_occs)
     # gal
 
     # Assuming medium usage (ASHRAE Handbook of HVAC and Applications Chapter 50 Table 7)
     gal_per_person = 4.8 # Assuming Medium usage and 60 minutes of peak usage (ASHRAE Handbook of HVAC Applications Chapter 50 Table 7)
+    if num_occs == 0
+      num_occs = 2.6 * num_units
+    end
     cumulative_hw_volume = gal_per_person * num_occs
     boiler_storage_tank_volume = cumulative_hw_volume / 0.7
 

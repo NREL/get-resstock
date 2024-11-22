@@ -349,7 +349,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       end
     end
 
-    if (num_units >= 20) && (bldg_data['Water Heater In Unit'] == 'No')
+    if (num_units >= 10) && (bldg_data['Water Heater In Unit'] == 'No')
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
