@@ -30,42 +30,29 @@ class Tanks
     end
   end
 
-  def self.get_storage_volumes(_model, type, num_units, cec_climate_zone)
+  def self.get_boiler_storage_volume(num_units, num_occs)
     # gal
-    gal_per_unit = 2.6 * 4.8 / 0.7 # FIXME
-    # gal_per_unit /= 2 # FIXME
 
-    boiler_storage_tank_volume = 0.0
+    # Assuming medium usage (ASHRAE Handbook of HVAC and Applications Chapter 50 Table 7)
+    gal_per_person = 4.8 # Assuming Medium usage and 60 minutes of peak usage (ASHRAE Handbook of HVAC Applications Chapter 50 Table 7)
+    if num_occs == 0
+      num_occs = 2.6 * num_units
+    end
+    cumulative_hw_volume = gal_per_person * num_occs
+    boiler_storage_tank_volume = cumulative_hw_volume / 0.7
+
+    return boiler_storage_tank_volume
+  end
+
+  def self.get_heat_pump_storage_volume(type, cec_climate_zone)
+    # gal
+
     heat_pump_storage_tank_volume = 0.0
-
-    # boiler_storage_tank_volume = get_total_water_heating_tank_volume(model)
-    boiler_storage_tank_volume = gal_per_unit * num_units
-
-    if !type.include?(Constant::SpaceHeating)
-      boiler_storage_tank_volume *= 1
-    else
-      boiler_storage_tank_volume *= 2
-    end
-
-    # boiler_storage_tank_volume = [120.0, boiler_storage_tank_volume].max # FIXME min 120 gal
-    # boiler_storage_tank_volume = 480.0 # FIXME
-
     if type.include?(Constant::HeatPumpWaterHeater)
-
-      # heat_pump_storage_tank_volume = gal_per_unit * num_units
       heat_pump_storage_tank_volume = min_tank_size_by_cec_climate_zone(cec_climate_zone)
-
-      if !type.include?(Constant::SpaceHeating)
-        heat_pump_storage_tank_volume *= 1
-      else
-        heat_pump_storage_tank_volume *= 2
-      end
-
-      # heat_pump_storage_tank_volume = [120.0, heat_pump_storage_tank_volume].max # FIXME min 120 gal
-      # heat_pump_storage_tank_volume = 120.0 # FIXME
     end
 
-    return boiler_storage_tank_volume, heat_pump_storage_tank_volume
+    return heat_pump_storage_tank_volume
   end
 
   def self.get_swing_volume(include_swing_tank, num_units)
@@ -107,6 +94,7 @@ class Tanks
     setpoint_schedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
 
     storage_tank.setEndUseSubcategory(name)
+    volume = [0.0001, volume].max # FIXME: this will set 0.1893 m^3/s (50 gal) if we try to set 0 volume
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setTankHeight(h_tank)
     # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME: set this to 90C?

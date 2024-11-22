@@ -2899,7 +2899,8 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
         if capacity == 0 && object_type == Constants.ObjectNameSolarHotWater
           return { LT::HotWaterSolarThermal => ['Water Heater Use Side Heat Transfer Energy'] }
         elsif capacity == 0 && object_type == 'shared water heater'
-          return { LT::HotWaterTankLosses => ['Water Heater Use Side Heat Transfer Energy'] }
+          # return { LT::HotWaterTankLosses => ['Water Heater Use Side Heat Transfer Energy'] }
+          return { LT::HotWaterTankLosses => ['Water Heater Heat Loss Energy'] }
         elsif capacity > 0 || is_combi_boiler # Active water heater only (e.g., exclude desuperheater and solar thermal storage tanks)
           return { LT::HotWaterTankLosses => ['Water Heater Heat Loss Energy'] }
         end
