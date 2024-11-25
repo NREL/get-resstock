@@ -145,6 +145,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     supply_loops = heat_pump_loops.merge(boiler_loops)
 
+    hp_in_series = false # false means in parallel
+    boiler_on_hp_outlet = hp_in_series
+
     # Add Adiabatic Pipes
     Pipes.create_adiabatic_supply(model, dhw_loop)
     # Pipes.create_adiabatic_demand(model, dhw_loop)
@@ -156,8 +159,10 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       Pipes.create_adiabatic_supply(model, supply_loop)
       Pipes.create_adiabatic_demand(model, supply_loop)
     end
-    Pipes.create_adiabatic_supply(model, storage_loop)
-    Pipes.create_adiabatic_demand(model, storage_loop)
+    if boiler_on_hp_outlet
+      Pipes.create_adiabatic_supply(model, storage_loop)
+      Pipes.create_adiabatic_demand(model, storage_loop)
+    end
     Pipes.create_adiabatic_supply(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
     Pipes.create_adiabatic_demand(model, space_heating_loop) if shared_water_heater_type.include?(Constant::SpaceHeating)
 
@@ -184,7 +189,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     heat_pump_loops.each do |supply_loop, _|
       Setpoints.create_manager(model, supply_loop, heat_pump_loop_sp_schedule)
     end
-    Setpoints.create_manager(model, storage_loop, storage_loop_sp_schedule)
+    if boiler_on_hp_outlet
+      Setpoints.create_manager(model, storage_loop, storage_loop_sp_schedule)
+    end
     Setpoints.create_manager(model, space_heating_loop, space_heating_loop_sp_schedule)
 
     # heating_op_scheme = OpenStudio::Model::PlantEquipmentOperationHeatingLoad.new(model)
@@ -200,7 +207,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # prev_storage_tank = components[0]
     # end
     heat_pump_loops.each do |supply_loop, components|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp)
+      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp, hp_in_series)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
@@ -209,7 +216,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       # heating_op_scheme.addEquipment(storage_tank)
     end
     boiler_loops.each do |supply_loop, components|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
+      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp, true, boiler_on_hp_outlet)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
@@ -217,6 +224,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
       # heating_op_scheme.addEquipment(storage_tank)
       # heating_op_scheme.addLoadRange(100.0, [storage_tank])
+    end
+
+    if !boiler_on_hp_outlet
+      Pipes.create_adiabatic_supply(model, storage_loop)
+      Pipes.create_adiabatic_demand(model, storage_loop)
+      Setpoints.create_manager(model, storage_loop, storage_loop_sp_schedule)
     end
 
     # storage_loop.setPlantEquipmentOperationHeatingLoad(heating_op_scheme)

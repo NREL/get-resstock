@@ -11,8 +11,7 @@ class Supply
       # FIXME: How to adjust size when used for space heating?
       # heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
       # heat_pump_count = [1, heat_pump_count].max # FIXME: min
-      # heat_pump_count = 1
-      heat_pump_count = [(num_units / 60.0).ceil, 5].min
+      heat_pump_count = [(num_units / 20.0).ceil, 5].min
 
       if type.include?(Constant::SpaceHeating)
         # heat_pump_count += 0 # FIXME

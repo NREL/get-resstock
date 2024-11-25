@@ -353,7 +353,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
-      if water_heater_efficiency.include?('Natural Gas Standard') || water_heater_efficiency.include?('Natural Gas Premium') || water_heater_efficiency.include?('Natural Gas Heat Pump')
+      if water_heater_efficiency.include?('Natural Gas')
         if water_heater_efficiency.include?('Natural Gas Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
         else
@@ -361,9 +361,9 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         end
         if water_heater_efficiency.include?('Standard')
           shared_boiler_efficiency_afue = 0.8
-        elsif water_heater_efficiency.end_with?('Premium')
+        elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
           shared_boiler_efficiency_afue = 0.85
-        elsif water_heater_efficiency.end_with?('Premium, Condensing')
+        elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
           shared_boiler_efficiency_afue = 0.9
         end
       end

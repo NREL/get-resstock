@@ -75,7 +75,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -141,10 +141,14 @@ class Tanks
       storage_tank.setSourceSideOutletHeight(0)
     end
 
-    if prev_storage_tank.nil?
+    if prev_storage_tank.nil? || !hp_in_series
       supply_side_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
     else
-      storage_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
+      if boiler_on_hp_outlet
+        storage_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
+      else
+        storage_tank.addToNode(supply_side_loop.supplyOutletNode)
+      end
     end
     if !supply_side_loop.nil?
       demand_side_loop.addDemandBranchForComponent(storage_tank)
