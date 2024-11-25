@@ -77,7 +77,7 @@ postprocessing:
     region_name: 'us-west-2'
     s3:
       bucket: gas-hpwh
-      prefix: '2020'
+      prefix: '2023'
     athena:
       glue_service_role: service-role/AWSGlueServiceRole-default
       database_name: gashpwh
