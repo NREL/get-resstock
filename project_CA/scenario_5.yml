@@ -52,28 +52,12 @@ workflow_generator:
       include_timeseries_airflows: true
       include_timeseries_weather: true
       include_timeseries_resilience: true
-      # output_variables:
-        # - name: Boiler NaturalGas Energy # 1a
-        # - name: Boiler Heating Energy # 1b
-        # - name: Fuel-fired Absorption HeatPump Fuel Energy # 2a
-        # - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy # 2b
-        # - name: Boiler Inlet Temperature
-        # - name: Boiler Outlet Temperature
-        # - name: Fuel-fired Absorption HeatPump Inlet Temperature
-        # - name: Fuel-fired Absorption HeatPump Outlet Temperature
-        # - name: Water Heater Use Side Heat Transfer Energy
-        # - name: Water Heater Heat Loss Energy
-        # - name: Water Heater Tank Temperature
-        # - name: Pump Fluid Heat Gain Energy
-        # - name: Performance Curve Output Value
 
     reporting_measures:
       - measure_dir_name: QOIReport
 
     server_directory_cleanup:
       retain_schedules_csv: false
-
-    # debug: true
 
 baseline:
   n_buildings_represented: 136569411 # American Community Survey 2019 5-year, B25001, does not include AK, HI, and territories

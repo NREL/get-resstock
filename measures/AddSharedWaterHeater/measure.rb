@@ -206,7 +206,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # components << storage_tank
     # prev_storage_tank = components[0]
     # end
-    heat_pump_loops.each do |supply_loop, components|
+    # heat_pump_tanks = []
+    heat_pump_loops.each_with_index do |(supply_loop, components), i|
       storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp, hp_in_series)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
@@ -214,7 +215,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       prev_storage_tank = components[0]
 
       # heating_op_scheme.addEquipment(storage_tank)
+      # heating_op_scheme.addLoadRange(heat_pump_capacity * (i + 1), [storage_tank])
+      # heat_pump_tanks << storage_tank
     end
+    # heating_op_scheme.addLoadRange(heat_pump_capacity * heat_pump_loops.size, heat_pump_tanks)
+    # heating_op_scheme.addLoadRange(1000, heat_pump_tanks)
     boiler_loops.each do |supply_loop, components|
       storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp, true, boiler_on_hp_outlet)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
@@ -223,7 +228,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       prev_storage_tank = components[0]
 
       # heating_op_scheme.addEquipment(storage_tank)
-      # heating_op_scheme.addLoadRange(100.0, [storage_tank])
+      # heating_op_scheme.addLoadRange(10000, [storage_tank])
     end
 
     if !boiler_on_hp_outlet
@@ -233,6 +238,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     # storage_loop.setPlantEquipmentOperationHeatingLoad(heating_op_scheme)
+    # storage_loop.setLoadDistributionScheme('UniformLoad')
+    # storage_loop.setLoadDistributionScheme('Sequential')
 
     # Add Swing Tank
     swing_tank_capacity /= 2 # FIXME
