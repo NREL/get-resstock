@@ -120,12 +120,16 @@ class Tanks
     storage_tank.setOffCycleFlueLossCoefficienttoAmbientTemperature(0)
     # storage_tank.setOffCycleFlueLossFractiontoZone(1.0 / unit_multiplier)
     # storage_tank.setOffCycleFlueLossFractiontoZone(0.0714285714285714) # FIXME: apply_solar_thermal
+
     # storage_tank.setSourceSideInletHeight(h_source_in)
-    storage_tank.setSourceSideInletHeight(h_source_out / 3.0) # FIXME: apply_solar_thermal
-    # storage_tank.setSourceSideOutletHeight(h_source_out)
+    # storage_tank.setSourceSideInletHeight(h_source_out / 3.0) # FIXME: apply_solar_thermal
+    storage_tank.setSourceSideInletHeight(h_source_out)
     storage_tank.setSourceSideOutletHeight(0) # FIXME: apply_solar_thermal
+    # storage_tank.setSourceSideOutletHeight(h_source_out)
+
     storage_tank.setUseSideInletHeight(0)
     storage_tank.setUseSideOutletHeight(h_source_out)
+
     storage_tank.setOffCycleParasiticFuelConsumptionRate(0.0)
     storage_tank.setOnCycleParasiticFuelConsumptionRate(0.0)
     storage_tank.setNumberofNodes(8) # FIXME: apply_solar_thermal

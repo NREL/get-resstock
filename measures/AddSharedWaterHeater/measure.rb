@@ -145,7 +145,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     supply_loops = heat_pump_loops.merge(boiler_loops)
 
-    hp_in_series = false # false means in parallel
+    hp_in_series = true # false means in parallel
     boiler_on_hp_outlet = hp_in_series
 
     # Add Adiabatic Pipes
