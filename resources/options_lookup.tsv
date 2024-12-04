@@ -14031,9 +14031,3 @@ Windows	U 0.30 SHGC 0.23	ResStockArguments	window_ufactor=0.30	window_shgc=0.23	
 Windows	U 0.30 SHGC 0.35	ResStockArguments	window_ufactor=0.30	window_shgc=0.35	skylight_ufactor=0.37	skylight_shgc=0.3																																						
 Windows	U 0.34 SHGC 0.23	ResStockArguments	window_ufactor=0.34	window_shgc=0.23	skylight_ufactor=0.37	skylight_shgc=0.3																																						
 Windows	Void																																											
-sample_weight_elec_iou	Void																																											
-sample_weight_elec_non_iou	Void																																											
-sample_weight_elec	Void																																											
-sample_weight_gas	Void																																											
-sample_weight_gas_iou	Void																																											
-sample_weight_buildings	Void																																											
