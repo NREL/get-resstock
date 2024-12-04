@@ -93,7 +93,7 @@ class Supply
         component.setFuelType(EPlus.fuel_type(fuel_type))
         # component.setEndUseSubcategory()
         component.setNominalHeatingCapacity(capacity)
-        component.setNominalCOP(1.293)
+        component.setNominalCOP(1.0) # FIXME: changed this from 1.293 because there's evidence when the curves were derived they didn't account for nominal COP, it's not mentioned at all in the document they sent us on the derivation
         # component.setDesignFlowRate(0.005) # FIXME
         lift = UnitConversions.convert(20.0, 'deltaF', 'deltaC')
         component.setDesignTemperatureLift(lift)
