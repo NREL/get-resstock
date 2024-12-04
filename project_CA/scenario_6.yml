@@ -64,7 +64,7 @@ baseline:
 
 kestrel:
   n_jobs: 25
-  minutes_per_sim: 3
+  minutes_per_sim: 30
   account: gashpwh
   postprocessing:
     time: 240
