@@ -6,11 +6,12 @@ import plotly.express as px
 import warnings
 warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 
-folder = 'gahp_5k_all_parallel'
+folder = 'gahp_cop_1pt0_series'
 
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
     df = pd.read_csv(csv_file_path, na_values=list(default_na_values - {'None'}), keep_default_na=False, **kwargs)
+    df = df[df['completed_status'] == 'Success']
     return df
 
 dfs = {
@@ -59,7 +60,6 @@ columns = [
     # 'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_total_lb'
 ]
 
-df = df[df['completed_status'] == 'Success']
 # df = df[df['add_shared_water_heater.shared_water_heater_fuel_type'] != 'natural gas']
 # df = df[df['build_existing_model.water_heater_in_unit'] == 'Yes']
 
@@ -82,10 +82,10 @@ for x in xs:
             category_orders=category_orders,
             text_auto=True)
         fig.update_layout(title_text=col)
-        plotly.offline.plot(fig, filename='{}/{}_{}.html'.format(folder, col, x), auto_open=False)
+        plotly.offline.plot(fig, filename='c:/OpenStudio/{}/{}_{}.html'.format(folder, col, x), auto_open=False)
 
-df = df.reset_index()
-df = df.sort_values(by=['building_id', 'add_shared_water_heater.shared_water_heater_type'])
-df = df.set_index('building_id')
-df = df[['scenario', 'build_existing_model.hvac_heating_efficiency', 'build_existing_model.water_heater_efficiency', 'add_shared_water_heater.shared_water_heater_type'] + xs + columns]
-df.to_csv('{}/results.csv'.format(folder))
+# df = df.reset_index()
+# df = df.sort_values(by=['building_id', 'add_shared_water_heater.shared_water_heater_type'])
+# df = df.set_index('building_id')
+# df = df[['scenario', 'build_existing_model.hvac_heating_efficiency', 'build_existing_model.water_heater_efficiency', 'add_shared_water_heater.shared_water_heater_type'] + xs + columns]
+# df.to_csv('{}/results.csv'.format(folder))
