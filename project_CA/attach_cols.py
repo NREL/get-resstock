@@ -11,7 +11,8 @@ def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
 
 sample_weight_cols = ['add_shared_water_heater.heat_pump_count', 'sample_weight', 'sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou', 'sample_weight_buildings']
 
-results_csv_file = 'results_up00_COP1pt0_scenario'
+# results_csv_file = 'results_up00_COP1pt0_scenario'
+results_csv_file = 'results_up00_COP1pt293_scenario'
 sample_weight_files = ['2020_sample_weight.csv', '2023_sample_weight.csv', '2026_sample_weight.csv', '2029_sample_weight.csv', '2026-gaseff_sample_weight.csv', '2029-gaseff_sample_weight.csv']
 
 for i, sample_weight_file in enumerate(sample_weight_files):
@@ -21,4 +22,4 @@ for i, sample_weight_file in enumerate(sample_weight_files):
     df_samples = df_samples[sample_weight_cols]
 
     df = df_results.join(df_samples)
-    df.to_csv(os.path.join('project_CA', results_csv_file + '{}_sample_weight.csv'.format(i+1)))
+    df.to_csv(os.path.join('project_CA', results_csv_file + '{}_wt.csv'.format(i+1)))

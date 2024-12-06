@@ -8,6 +8,15 @@ warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 
 folder = 'gahp_cop_1pt0_series'
 
+baseline_boiler_eff = 'Natural Gas Standard'
+upgrade_boiler_eff = 'Natural Gas Heat Pump, Standard'
+
+# baseline_boiler_eff = 'Natural Gas Premium'
+# upgrade_boiler_eff = 'Natural Gas Heat Pump, Premium'
+
+# baseline_boiler_eff = 'Natural Gas Premium, Condensing'
+# upgrade_boiler_eff = 'Natural Gas Heat Pump, Premium, Condensing'
+
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
     df = pd.read_csv(csv_file_path, na_values=list(default_na_values - {'None'}), keep_default_na=False, **kwargs)
@@ -17,10 +26,8 @@ def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
 dfs = {
         # 'Unit models 2029': read_csv('c:/OpenStudio/{}/UnitModelBaseline/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         # 'Unit models 2029 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/UnitModelFeature/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        # '2029': read_csv('c:/OpenStudio/{}/Baseline/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        # '2029 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/Feature/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        '2020': read_csv('c:/OpenStudio/{}/2020/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        '2023': read_csv('c:/OpenStudio/{}/2023/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        # '2020': read_csv('c:/OpenStudio/{}/2020/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        # '2023': read_csv('c:/OpenStudio/{}/2023/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2026': read_csv('c:/OpenStudio/{}/2026/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2029': read_csv('c:/OpenStudio/{}/2029/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2026 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/2026-gaseff/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
@@ -37,8 +44,23 @@ for k, v in dfs.items():
 # dfs['Unit models 2029'] = dfs['Unit models 2029'][dfs['Unit models 2029'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 # dfs['Unit models 2029 w/Gas Efficiency'] = dfs['Unit models 2029 w/Gas Efficiency'][dfs['Unit models 2029 w/Gas Efficiency'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 
-# dfs['2029'] = dfs['2029'][dfs['2029'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
-# dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency'].index.isin(dfs['2029'].index)]
+dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_in_unit'] == 'No']
+dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
+dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_efficiency'] == baseline_boiler_eff]
+dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'] == upgrade_boiler_eff]
+dfs['2026'] = dfs['2026'].loc[dfs['2026'].index.intersection(dfs['2026 w/Gas Efficiency'].index)]
+dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'].loc[dfs['2026 w/Gas Efficiency'].index.intersection(dfs['2026'].index)]
+print('2026: {}'.format(dfs['2026'].shape))
+print('2026 w/Gas Efficiency: {}'.format(dfs['2026 w/Gas Efficiency'].shape))
+
+dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_in_unit'] == 'No']
+dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
+dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_efficiency'] == baseline_boiler_eff]
+dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'] == upgrade_boiler_eff]
+dfs['2029'] = dfs['2029'].loc[dfs['2029'].index.intersection(dfs['2029 w/Gas Efficiency'].index)]
+dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'].loc[dfs['2029 w/Gas Efficiency'].index.intersection(dfs['2029'].index)]
+print('2029: {}'.format(dfs['2029'].shape))
+print('2029 w/Gas Efficiency: {}'.format(dfs['2029 w/Gas Efficiency'].shape))
 
 df = pd.concat(dfs.values())
 df['build_existing_model.geometry_building_number_units_mf'] = df['build_existing_model.geometry_building_number_units_mf'].astype(int)
