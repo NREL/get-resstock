@@ -5,17 +5,9 @@ import plotly
 import plotly.express as px
 import warnings
 warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
+warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
-folder = 'gahp_cop_1pt0_series'
-
-baseline_boiler_eff = 'Natural Gas Standard'
-upgrade_boiler_eff = 'Natural Gas Heat Pump, Standard'
-
-# baseline_boiler_eff = 'Natural Gas Premium'
-# upgrade_boiler_eff = 'Natural Gas Heat Pump, Premium'
-
-# baseline_boiler_eff = 'Natural Gas Premium, Condensing'
-# upgrade_boiler_eff = 'Natural Gas Heat Pump, Premium, Condensing'
+folder = 'gahp_cop_1pt0_series_2'
 
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
@@ -44,23 +36,34 @@ for k, v in dfs.items():
 # dfs['Unit models 2029'] = dfs['Unit models 2029'][dfs['Unit models 2029'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 # dfs['Unit models 2029 w/Gas Efficiency'] = dfs['Unit models 2029 w/Gas Efficiency'][dfs['Unit models 2029 w/Gas Efficiency'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 
-dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_in_unit'] == 'No']
-dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
-dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_efficiency'] == baseline_boiler_eff]
-dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'] == upgrade_boiler_eff]
-dfs['2026'] = dfs['2026'].loc[dfs['2026'].index.intersection(dfs['2026 w/Gas Efficiency'].index)]
-dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'].loc[dfs['2026 w/Gas Efficiency'].index.intersection(dfs['2026'].index)]
-print('2026: {}'.format(dfs['2026'].shape))
-print('2026 w/Gas Efficiency: {}'.format(dfs['2026 w/Gas Efficiency'].shape))
+downselect_to_boiler_baseline_and_gahp_upgrade = True
+if downselect_to_boiler_baseline_and_gahp_upgrade:
+    # baseline_boiler_eff = ['Natural Gas Standard']
+    # upgrade_boiler_eff = ['Natural Gas Heat Pump, Standard']
 
-dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_in_unit'] == 'No']
-dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
-dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_efficiency'] == baseline_boiler_eff]
-dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'] == upgrade_boiler_eff]
-dfs['2029'] = dfs['2029'].loc[dfs['2029'].index.intersection(dfs['2029 w/Gas Efficiency'].index)]
-dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'].loc[dfs['2029 w/Gas Efficiency'].index.intersection(dfs['2029'].index)]
-print('2029: {}'.format(dfs['2029'].shape))
-print('2029 w/Gas Efficiency: {}'.format(dfs['2029 w/Gas Efficiency'].shape))
+    # baseline_boiler_eff = ['Natural Gas Premium', 'Natural Gas Tankless']
+    # upgrade_boiler_eff = ['Natural Gas Heat Pump, Premium']
+
+    baseline_boiler_eff = ['Natural Gas Premium, Condensing', 'Natural Gas Tankless, Condensing']
+    upgrade_boiler_eff = ['Natural Gas Heat Pump, Premium, Condensing']
+
+    dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_in_unit'] == 'No']
+    dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
+    dfs['2026'] = dfs['2026'][dfs['2026']['build_existing_model.water_heater_efficiency'].isin(baseline_boiler_eff)]
+    dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'][dfs['2026 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'].isin(upgrade_boiler_eff)]
+    dfs['2026'] = dfs['2026'].loc[dfs['2026'].index.intersection(dfs['2026 w/Gas Efficiency'].index)]
+    dfs['2026 w/Gas Efficiency'] = dfs['2026 w/Gas Efficiency'].loc[dfs['2026 w/Gas Efficiency'].index.intersection(dfs['2026'].index)]
+    print('2026: {}'.format(dfs['2026'].shape))
+    print('2026 w/Gas Efficiency: {}'.format(dfs['2026 w/Gas Efficiency'].shape))
+
+    dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_in_unit'] == 'No']
+    dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_in_unit'] == 'No']
+    dfs['2029'] = dfs['2029'][dfs['2029']['build_existing_model.water_heater_efficiency'].isin(baseline_boiler_eff)]
+    dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'][dfs['2029 w/Gas Efficiency']['build_existing_model.water_heater_efficiency'].isin(upgrade_boiler_eff)]
+    dfs['2029'] = dfs['2029'].loc[dfs['2029'].index.intersection(dfs['2029 w/Gas Efficiency'].index)]
+    dfs['2029 w/Gas Efficiency'] = dfs['2029 w/Gas Efficiency'].loc[dfs['2029 w/Gas Efficiency'].index.intersection(dfs['2029'].index)]
+    print('2029: {}'.format(dfs['2029'].shape))
+    print('2029 w/Gas Efficiency: {}'.format(dfs['2029 w/Gas Efficiency'].shape))
 
 df = pd.concat(dfs.values())
 df['build_existing_model.geometry_building_number_units_mf'] = df['build_existing_model.geometry_building_number_units_mf'].astype(int)
@@ -106,8 +109,10 @@ for x in xs:
         fig.update_layout(title_text=col)
         plotly.offline.plot(fig, filename='c:/OpenStudio/{}/{}_{}.html'.format(folder, col, x), auto_open=False)
 
-# df = df.reset_index()
+df = df.reset_index()
 # df = df.sort_values(by=['building_id', 'add_shared_water_heater.shared_water_heater_type'])
-# df = df.set_index('building_id')
+df = df.sort_values(by=['building_id', 'scenario'])
+df = df.set_index('building_id')
 # df = df[['scenario', 'build_existing_model.hvac_heating_efficiency', 'build_existing_model.water_heater_efficiency', 'add_shared_water_heater.shared_water_heater_type'] + xs + columns]
-# df.to_csv('{}/results.csv'.format(folder))
+df = df[['scenario', 'build_existing_model.hvac_heating_efficiency', 'build_existing_model.water_heater_efficiency'] + xs + columns]
+df.to_csv('c:/OpenStudio/{}/results.csv'.format(folder))
