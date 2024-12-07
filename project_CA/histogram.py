@@ -18,8 +18,8 @@ def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
 dfs = {
         # 'Unit models 2029': read_csv('c:/OpenStudio/{}/UnitModelBaseline/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         # 'Unit models 2029 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/UnitModelFeature/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        # '2020': read_csv('c:/OpenStudio/{}/2020/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        # '2023': read_csv('c:/OpenStudio/{}/2023/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        '2020': read_csv('c:/OpenStudio/{}/2020/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        '2023': read_csv('c:/OpenStudio/{}/2023/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2026': read_csv('c:/OpenStudio/{}/2026/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2029': read_csv('c:/OpenStudio/{}/2029/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2026 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/2026-gaseff/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
@@ -36,7 +36,7 @@ for k, v in dfs.items():
 # dfs['Unit models 2029'] = dfs['Unit models 2029'][dfs['Unit models 2029'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 # dfs['Unit models 2029 w/Gas Efficiency'] = dfs['Unit models 2029 w/Gas Efficiency'][dfs['Unit models 2029 w/Gas Efficiency'].index.isin(dfs['2029 w/Gas Efficiency'].index)]
 
-downselect_to_boiler_baseline_and_gahp_upgrade = True
+downselect_to_boiler_baseline_and_gahp_upgrade = False
 if downselect_to_boiler_baseline_and_gahp_upgrade:
     # baseline_boiler_eff = ['Natural Gas Standard']
     # upgrade_boiler_eff = ['Natural Gas Heat Pump, Standard']
@@ -75,15 +75,21 @@ columns = [
     'report_simulation_output.energy_use_total_m_btu',
     'report_simulation_output.fuel_use_electricity_total_m_btu',
     'report_simulation_output.fuel_use_natural_gas_total_m_btu',
+    'report_simulation_output.end_use_electricity_hot_water_m_btu',
     'report_simulation_output.end_use_natural_gas_heating_m_btu',
     'report_simulation_output.end_use_natural_gas_hot_water_m_btu',
     'report_simulation_output.load_hot_water_delivered_m_btu',
+    'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_total_lb',
+    'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_electricity_total_lb',
+    'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_natural_gas_total_lb',
+    'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_natural_gas_hot_water_lb',
+    'report_utility_bills.bills_total_usd',
+    'report_utility_bills.bills_electricity_total_usd',
+    'report_utility_bills.bills_natural_gas_total_usd',
     'add_shared_water_heater.heat_pump_count',
-    # 'report_simulation_output.end_use_natural_gas_heating_plus_hot_water_m_btu',
-    # 'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_electricity_total_lb',
-    # 'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_natural_gas_total_lb',
-    # 'report_simulation_output.emissions_co_2_e_lrmer_mid_case_15_total_lb'
+    'sample_weight_buildings'
 ]
+# df = df[columns].multiply(df['sample_weight'])
 
 # df = df[df['add_shared_water_heater.shared_water_heater_fuel_type'] != 'natural gas']
 # df = df[df['build_existing_model.water_heater_in_unit'] == 'Yes']
@@ -92,14 +98,23 @@ df['All Buildings'] = 'All Buildings'
 xs = ['All Buildings',
       'build_existing_model.geometry_stories',
       'build_existing_model.geometry_building_number_units_mf',
-      'build_existing_model.cec_climate_zone']
+      'build_existing_model.cec_climate_zone',
+      'build_existing_model.building_america_climate_zone',
+      'build_existing_model.county',
+      'build_existing_model.puma_metro_status',
+      'build_existing_model.hot_water_fixtures']
 for x in xs:
     if x == 'build_existing_model.geometry_building_number_units_mf':
         category_orders = {'build_existing_model.geometry_building_number_units_mf': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '24', '30', '36', '43', '67', '116', '183', '326']}
     else:
         category_orders = {}
     for col in columns:
-        fig = px.histogram(df,
+
+        df2 = df.copy()
+        if not 'sample_weight' in col:
+            df2[col] *= df2['sample_weight']
+
+        fig = px.histogram(df2,
             x=x,
             y=col,
             color='scenario',
