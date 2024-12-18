@@ -55,6 +55,7 @@ downselect_to_boiler_baseline_and_gahp_upgrade = True
 if downselect_to_boiler_baseline_and_gahp_upgrade:
 
     for scenario in ['2026', '2029']:
+        print('{}: total buildings: {}'.format(scenario, dfs[scenario]['sample_weight_buildings'].sum()))
         bs = []
         us = []
         for baseline_boiler_eff, upgrade_boiler_eff in [[['Natural Gas Standard'], ['Natural Gas Heat Pump, Standard']],
@@ -63,7 +64,7 @@ if downselect_to_boiler_baseline_and_gahp_upgrade:
         
             b = dfs[scenario].copy()
             u = dfs['{} w/Gas Efficiency'.format(scenario)].copy()
-            
+
             b = b[b['build_existing_model.water_heater_in_unit'] == 'No']
             u = u[u['build_existing_model.water_heater_in_unit'] == 'No']
 
@@ -79,7 +80,9 @@ if downselect_to_boiler_baseline_and_gahp_upgrade:
             bs.append(b)
             us.append(u)
         dfs[scenario] = pd.concat(bs)
-        dfs['{} w/Gas Efficiency'.format(scenario)] = pd.concat(us)        
+        dfs['{} w/Gas Efficiency'.format(scenario)] = pd.concat(us)
+        print('{}: datapoints: {}'.format(scenario, dfs[scenario].shape[0]))
+        print('{}: buildings: {}'.format(scenario, dfs[scenario]['sample_weight_buildings'].sum()))
 
 df = pd.concat(dfs.values())
 df['build_existing_model.geometry_building_number_units_mf'] = df['build_existing_model.geometry_building_number_units_mf'].astype(int)
@@ -88,6 +91,27 @@ df['build_existing_model.cec_climate_zone'] = df['build_existing_model.cec_clima
 df['build_existing_model.cec_climate_zone'] = df['build_existing_model.cec_climate_zone'].astype(str)
 df['build_existing_model.geometry_stories'] = df['build_existing_model.geometry_stories'].astype(int)
 df['build_existing_model.geometry_stories'] = df['build_existing_model.geometry_stories'].astype(str)
+df['build_existing_model.geometry_building_number_units_mf_bins'] = df['build_existing_model.geometry_building_number_units_mf']
+df['build_existing_model.geometry_building_number_units_mf_bins'] = df['build_existing_model.geometry_building_number_units_mf_bins'].map({
+    '10': '10 - 19',
+    '11': '10 - 19',
+    '12': '10 - 19',
+    '13': '10 - 19',
+    '14': '10 - 19',
+    '15': '10 - 19',
+    '16': '10 - 19',
+    '17': '10 - 19',
+    '18': '10 - 19',
+    '19': '10 - 19',
+    '20': '20 - 116',
+    '24': '20 - 116',
+    '30': '20 - 116',
+    '36': '20 - 116',
+    '43': '20 - 116',
+    '67': '20 - 116',
+    '116': '20 - 116',
+    '183': '183 - 326',
+    '326': '183 - 326'})
 
 # df['report_simulation_output.end_use_natural_gas_heating_plus_hot_water_m_btu'] = df['report_simulation_output.end_use_natural_gas_heating_m_btu'] + df['report_simulation_output.end_use_natural_gas_hot_water_m_btu']
 df['report_simulation_output.end_use_hot_water_m_btu'] = df['report_simulation_output.end_use_electricity_hot_water_m_btu'] + df['report_simulation_output.end_use_natural_gas_hot_water_m_btu']
@@ -116,12 +140,13 @@ columns = [
 # df = df[df['add_shared_water_heater.shared_water_heater_fuel_type'] != 'natural gas']
 # df = df[df['build_existing_model.water_heater_in_unit'] == 'Yes']
 
-df['All Buildings'] = 'All Buildings'
+# df['All Buildings'] = 'All Buildings'
 xs = [
       # 'All Buildings',
       # 'build_existing_model.geometry_stories',
-      'build_existing_model.geometry_building_number_units_mf',
-      'build_existing_model.cec_climate_zone',
+      # 'build_existing_model.geometry_building_number_units_mf',
+      'build_existing_model.geometry_building_number_units_mf_bins',
+      # 'build_existing_model.cec_climate_zone',
       # 'build_existing_model.building_america_climate_zone',
       # 'build_existing_model.county',
       # 'build_existing_model.puma_metro_status',
@@ -130,14 +155,18 @@ xs = [
 
 xs_map = {'build_existing_model.geometry_stories': 'Number of Stories',
           'build_existing_model.geometry_building_number_units_mf': 'Number of Dwelling Units',
+          'build_existing_model.geometry_building_number_units_mf_bins': 'Number of Dwelling Units',
           'build_existing_model.cec_climate_zone': 'CEC Climate Zone',
           'build_existing_model.county': 'County',
-          'build_existing_model.hot_water_fixtures': 'Hot Water Fixtures'}
+          'build_existing_model.hot_water_fixtures': 'Hot Water Fixtures',
+          'All Buildings': 'All Buildings'}
 
-histogram = True
+histogram = False
 for x in xs:
     if x == 'build_existing_model.geometry_building_number_units_mf':
         category_orders = {'build_existing_model.geometry_building_number_units_mf': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '24', '30', '36', '43', '67', '116', '183', '326']}
+    elif x == 'build_existing_model.geometry_building_number_units_mf_bins':
+        category_orders = {'build_existing_model.geometry_building_number_units_mf_bins': ['10 - 19', '20 - 116', '183 - 326']}
     elif x == 'build_existing_model.cec_climate_zone':
         category_orders = {'build_existing_model.cec_climate_zone': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']}
     elif x == 'build_existing_model.geometry_stories':
@@ -189,13 +218,13 @@ for x in xs:
                 df3 = df2.copy()
                 df3 = df3.loc[df3['scenario'].isin([year, '{} w/Gas Efficiency'.format(year)])]
                 df3 = df3[['scenario', x, col]].reset_index()
-                df3 = df3[df3['building_id'] != 1726] # outlier?
+                # df3 = df3[df3['building_id'] != 1726] # FIXME: outlier?
                 df3 = df3.pivot(index=['building_id', x], columns='scenario', values=col).reset_index()
                 # df3.to_csv('test_{}.csv'.format(year))
                 fig = px.scatter(df3,
                     x=year,
                     y='{} w/Gas Efficiency'.format(year),
-                    # color=x, # FIXME
+                    color=x, # FIXME
                     category_orders=category_orders,
                     template='plotly_white',
                     labels={year: '{} (MBtu)'.format(year), '{} w/Gas Efficiency'.format(year): '{} w/Gas Efficiency (MBtu)'.format(year), x: xs_map[x]})
@@ -221,17 +250,17 @@ for x in xs:
                 fig.update_traces(mode='markers', marker_line_width=1, marker_size=10)
                 min_value, max_value = get_min_max(df3[year], df3['{} w/Gas Efficiency'.format(year)], 0, 0)
                 fig.add_trace(go.Scatter(x=[min_value, max_value], y=[min_value, max_value],
-                                         line=dict(color='black', dash='dash', width=1), mode='lines',
-                                         showlegend=True, name='0% Error'), row=1, col=1)
+                                         line=dict(color='black', width=1), mode='lines',
+                                         showlegend=True, name='0% Savings'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=[min_value, max_value], y=[0.8 * min_value, 0.8 * max_value],
-                                         line=dict(color='black', dash='dashdot', width=1), mode='lines',
-                                         showlegend=True, name='- 20% Error'), row=1, col=1)
+                                         line=dict(color='black', dash='dash', width=1), mode='lines',
+                                         showlegend=True, name='- 20% Savings'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=[min_value, max_value], y=[0.6 * min_value, 0.6 * max_value],
-                                         line=dict(color='black', dash='dashdot', width=1), mode='lines',
-                                         showlegend=True, name='- 40% Error'), row=1, col=1)
+                                         line=dict(color='black', dash='dot', width=1), mode='lines',
+                                         showlegend=True, name='- 40% Savings'), row=1, col=1)
                 fig.add_trace(go.Scatter(x=[min_value, max_value], y=[0.4 * min_value, 0.4 * max_value],
                                          line=dict(color='black', dash='dashdot', width=1), mode='lines',
-                                         showlegend=True, name='- 60% Error'), row=1, col=1)
+                                         showlegend=True, name='- 60% Savings'), row=1, col=1)
                 fig.update_xaxes(constrain='domain')
                 fig.update_yaxes(scaleanchor= 'x')                
                 plotly.offline.plot(fig, filename='c:/OpenStudio/{}/{}_{}_{}.html'.format(folder, col, x, year), auto_open=False)
