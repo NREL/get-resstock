@@ -35,6 +35,7 @@ workflow_generator:
 
     utility_bills:
       - scenario_name: Bills
+        elec_marginal_rate: 0.43
 
     simulation_output_report:
       timeseries_frequency: none
