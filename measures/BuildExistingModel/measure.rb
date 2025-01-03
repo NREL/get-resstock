@@ -419,6 +419,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       end
 
       if whole_sfa_or_mf_building_sim && num_units_modeled > 1
+      # if whole_sfa_or_mf_building_sim && num_units_modeled > 1 && unit_number > 1 # FIXME
         measures['BuildResidentialHPXML'][0]['battery_present'] = 'false' # limitation of OS-HPXML
       end
 
