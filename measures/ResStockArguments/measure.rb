@@ -619,6 +619,12 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
             if args[:battery_capacity] < 10.0
               args[:battery_present] = false
               args[:battery_capacity] = Constants.Auto
+              args[:battery_power] = Constants.Auto
+            else
+              c = 0.26
+
+              args[:battery_power] = pv_system_max_power_output * c
+              args[:battery_power] *= 1000.0 # W
             end
           elsif args[:battery_capacity] == Constants.Title24_2025
             b = { 1 => 1.88, 2 => 2.27, 3 => 1.88, 4 => 2.27, 5 => 1.88, 6 => 2.27, 7 => 2.27, 8 => 2.27, 9 => 2.27, 10 => 2.27, 11 => 2.27, 12 => 2.27, 13 => 2.27, 14 => 2.27, 15 => 2.85, 16 => 1.88 }[args[:cec_climate_zone]]
@@ -629,21 +635,12 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
             if args[:battery_capacity] < 10.0
               args[:battery_present] = false
               args[:battery_capacity] = Constants.Auto
-            end
-          end
-
-          if args[:battery_power] == Constants.Title24_2022
-            c = 0.26
-
-            args[:battery_power] = pv_system_max_power_output * c
-            args[:battery_power] *= 1000.0 # W
-          elsif args[:battery_power] == Constants.Title24_2025
-            if args[:battery_capacity] >= 10.0 
+              args[:battery_power] = Constants.Auto
+            else
               args[:battery_power] = args[:battery_capacity] / 4.0
               args[:battery_power] *= 1000.0 # W
             end
           end
-
         else
           runner.registerError("ResStockArguments: Title24 not defined for #{args[:geometry_unit_type]} with #{args[:geometry_num_floors_above_grade]} floor(s).")
           return false
