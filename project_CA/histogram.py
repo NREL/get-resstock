@@ -8,7 +8,7 @@ import warnings
 warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
-folder = 'gahp_cop_1pt0_series_2'
+folder = 'gahp_cop_1pt0_series_4'
 
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
