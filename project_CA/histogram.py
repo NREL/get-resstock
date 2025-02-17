@@ -8,7 +8,7 @@ import warnings
 warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
-folder = 'gahp_cop_1pt0_series_4'
+folder = 'gahp_cop_1pt0_series_4_latest'
 
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
@@ -35,9 +35,9 @@ dfs = {
         # 'Unit models 2029 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/UnitModelFeature/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         # '2020': read_csv('c:/OpenStudio/{}/2020/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         # '2023': read_csv('c:/OpenStudio/{}/2023/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        '2026': read_csv('c:/OpenStudio/{}/2026/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        # '2026': read_csv('c:/OpenStudio/{}/2026/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2029': read_csv('c:/OpenStudio/{}/2029/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
-        '2026 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/2026-gaseff/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
+        # '2026 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/2026-gaseff/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id']),
         '2029 w/Gas Efficiency': read_csv('c:/OpenStudio/{}/2029-gaseff/results_csvs/results-Baseline.csv'.format(folder), index_col=['building_id'])
 }
 
@@ -54,7 +54,9 @@ for k, v in dfs.items():
 downselect_to_boiler_baseline_and_gahp_upgrade = True
 if downselect_to_boiler_baseline_and_gahp_upgrade:
 
-    for scenario in ['2026', '2029']:
+    for scenario in dfs.keys():
+        scenario = scenario.replace(' w/Gas Efficiency', '')
+        
         print('{}: total buildings: {}'.format(scenario, dfs[scenario]['sample_weight_buildings'].sum()))
         bs = []
         us = []
@@ -74,7 +76,7 @@ if downselect_to_boiler_baseline_and_gahp_upgrade:
             b = b.loc[b.index.intersection(u.index)]
             u = u.loc[u.index.intersection(b.index)]
 
-            print('{}: {}: {}'.format(upgrade_boiler_eff, scenario, b.shape))
+            print('{}: {}: {}'.format(baseline_boiler_eff, scenario, b.shape))
             print('{}: {} w/Gas Efficiency: {}'.format(upgrade_boiler_eff, scenario, u.shape))
 
             bs.append(b)
@@ -82,7 +84,7 @@ if downselect_to_boiler_baseline_and_gahp_upgrade:
         dfs[scenario] = pd.concat(bs)
         dfs['{} w/Gas Efficiency'.format(scenario)] = pd.concat(us)
         print('{}: datapoints: {}'.format(scenario, dfs[scenario].shape[0]))
-        print('{}: buildings: {}'.format(scenario, dfs[scenario]['sample_weight_buildings'].sum()))
+        print('{}: buildings: {}\n'.format(scenario, dfs[scenario]['sample_weight_buildings'].sum()))
 
 df = pd.concat(dfs.values())
 df['build_existing_model.geometry_building_number_units_mf'] = df['build_existing_model.geometry_building_number_units_mf'].astype(int)
@@ -146,7 +148,7 @@ xs = [
       # 'build_existing_model.geometry_stories',
       # 'build_existing_model.geometry_building_number_units_mf',
       'build_existing_model.geometry_building_number_units_mf_bins',
-      # 'build_existing_model.cec_climate_zone',
+      'build_existing_model.cec_climate_zone',
       # 'build_existing_model.building_america_climate_zone',
       # 'build_existing_model.county',
       # 'build_existing_model.puma_metro_status',
@@ -161,7 +163,8 @@ xs_map = {'build_existing_model.geometry_stories': 'Number of Stories',
           'build_existing_model.hot_water_fixtures': 'Hot Water Fixtures',
           'All Buildings': 'All Buildings'}
 
-histogram = False
+histogram = True
+per_unit = True
 for x in xs:
     if x == 'build_existing_model.geometry_building_number_units_mf':
         category_orders = {'build_existing_model.geometry_building_number_units_mf': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '24', '30', '36', '43', '67', '116', '183', '326']}
@@ -175,11 +178,18 @@ for x in xs:
         category_orders = {}
     for col in columns:
 
-        df2 = df.copy()
+        df2 = df.copy()        
+        # print(df2)
         if not 'sample_weight' in col:
             df2[col] *= df2['sample_weight']
 
         if histogram:
+            if per_unit:
+                df2 = df2[['scenario', x, col, 'sample_weight']]
+                df2 = df2.groupby(['scenario', x]).sum().reset_index()
+                df2[col] = df2[col] / df2['sample_weight']
+                # print(df2)
+
             df2 = df2.sort_values(by='scenario')
             fig = px.histogram(df2,
                 x=x,
@@ -190,7 +200,7 @@ for x in xs:
                 template='plotly_white',
                 # text_auto=True,
                 labels={x: xs_map[x], 'scenario': 'Projection Scenario'})
-            fig.update_layout(yaxis_title= 'End Use Hot Water (MBtu)')
+            fig.update_layout(yaxis_title='End Use Hot Water (MBtu)')
             fig.update_layout(title_text=col)
             fig.update_layout(
                 title={
@@ -203,7 +213,7 @@ for x in xs:
                 yanchor="top",
                 y=0.99,
                 xanchor="left",
-                x=0.9,
+                x=0.85,
                 borderwidth=0.5
             ))
             fig.update_layout(
@@ -214,13 +224,19 @@ for x in xs:
             fig.update_traces(marker_line_width=0.75, marker_line_color="black")
             plotly.offline.plot(fig, filename='c:/OpenStudio/{}/{}_{}.html'.format(folder, col, x), auto_open=False)
         else:
-            for year in ['2026', '2029']:
+            for year in dfs.keys():
+                year = year.replace(' w/Gas Efficiency', '')
                 df3 = df2.copy()
+                
+                if per_unit:
+                    df3[col] /= df3['sample_weight']
+                
                 df3 = df3.loc[df3['scenario'].isin([year, '{} w/Gas Efficiency'.format(year)])]
                 df3 = df3[['scenario', x, col]].reset_index()
                 # df3 = df3[df3['building_id'] != 1726] # FIXME: outlier?
                 df3 = df3.pivot(index=['building_id', x], columns='scenario', values=col).reset_index()
                 # df3.to_csv('test_{}.csv'.format(year))
+
                 fig = px.scatter(df3,
                     x=year,
                     y='{} w/Gas Efficiency'.format(year),
