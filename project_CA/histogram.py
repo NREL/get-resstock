@@ -164,7 +164,7 @@ xs_map = {'build_existing_model.geometry_stories': 'Number of Stories',
           'All Buildings': 'All Buildings'}
 
 histogram = True
-per_unit = True
+per_unit = False
 for x in xs:
     if x == 'build_existing_model.geometry_building_number_units_mf':
         category_orders = {'build_existing_model.geometry_building_number_units_mf': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '24', '30', '36', '43', '67', '116', '183', '326']}
