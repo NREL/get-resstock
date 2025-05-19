@@ -354,6 +354,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
       if water_heater_efficiency.include?('Natural Gas')
+        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
         if water_heater_efficiency.include?('Natural Gas Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
         else
@@ -366,11 +367,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
           shared_boiler_efficiency_afue = 0.9
         end
+      elsif water_heater_efficiency.include?('Electric Heat Pump')
+        shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
+        shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
       end
 
-      if [Constant::WaterHeaterTypeBoiler, Constant::WaterHeaterTypeHeatPump, Constant::WaterHeaterTypeCombiBoiler, Constant::WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
-        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
-      end
     end
 
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']

@@ -80,8 +80,11 @@ class Supply
       supply_side_loop.addSupplyBranchForComponent(component)
     elsif type.include?(Constant::HeatPumpWaterHeater)
       if fuel_type == HPXML::FuelTypeElectricity
-        component = OpenStudio::Model::WaterHeaterHeatPump.new(model)
-        tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type)
+        component = OpenStudio::Model::WaterHeaterHeatPumpPumpedCondenser.new(model)
+        setpoint = SetPoints.get_heat_pump_setpoint(type, fuel_type, t_amb)
+        tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type, )
+        #self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+        
         tank.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
         component.setTank(tank)
         fan = component.fan
