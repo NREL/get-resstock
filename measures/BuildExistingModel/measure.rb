@@ -282,7 +282,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou']
+    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou', 'sample_weight_buildings']
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -338,23 +338,64 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     # Initialize measure keys with hpxml_path arguments
     hpxml_path = File.expand_path('../existing.xml')
 
-    # Optional whole SFA/MF building simulation
-    whole_sfa_or_mf_building_sim = false
-    geometry_building_num_units = 1
-    if whole_sfa_or_mf_building_sim
-      resstock_arguments_runner.result.stepValues.each do |step_value|
-        if step_value.name == 'geometry_building_num_units'
-          geometry_building_num_units = Integer(get_value_from_workflow_step_value(step_value))
-        end
+    # AddSharedWaterHeater measure
+    shared_water_heater_type = 'none'
+    shared_water_heater_fuel_type = 'none'
+
+    num_units = 1
+    resstock_arguments_runner.result.stepValues.each do |step_value|
+      if step_value.name == 'geometry_building_num_units'
+        num_units = Integer(get_value_from_workflow_step_value(step_value))
       end
     end
 
+    if (num_units >= 10) && (bldg_data['Water Heater In Unit'] == 'No')
+      require_relative '../AddSharedWaterHeater/resources/constants.rb'
+
+      water_heater_efficiency = bldg_data['Water Heater Efficiency']
+      if water_heater_efficiency.include?('Natural Gas')
+        if water_heater_efficiency.include?('Natural Gas Heat Pump')
+          shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        else
+          shared_water_heater_type = Constant::WaterHeaterTypeBoiler
+        end
+        if water_heater_efficiency.include?('Standard')
+          shared_boiler_efficiency_afue = 0.8
+        elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
+          shared_boiler_efficiency_afue = 0.85
+        elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
+          shared_boiler_efficiency_afue = 0.9
+        end
+      end
+
+      if [Constant::WaterHeaterTypeBoiler, Constant::WaterHeaterTypeHeatPump, Constant::WaterHeaterTypeCombiBoiler, Constant::WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
+        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
+      end
+    end
+
+    geometry_num_floors_above_grade = bldg_data['Geometry Stories']
+    geometry_corridor_position = bldg_data['Corridor']
+    cec_climate_zone = bldg_data['CEC Climate Zone']
+
+    # Optional whole SFA/MF building simulation and unit multipliers
+    whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
+    use_unit_multipliers = whole_sfa_or_mf_building_sim
+
+    geometry_building_num_units = 1
+    if whole_sfa_or_mf_building_sim
+      geometry_building_num_units = num_units
+    end
+
     num_units_modeled = 1
-    max_num_units_modeled = 5
+    max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
     unit_multipliers = []
-    if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
-      num_units_modeled = [geometry_building_num_units, max_num_units_modeled].min
-      unit_multipliers = split_into(geometry_building_num_units, num_units_modeled)
+    if use_unit_multipliers
+      if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
+        num_units_modeled = [geometry_building_num_units, max_num_units_modeled].min
+        unit_multipliers = split_into(geometry_building_num_units, num_units_modeled)
+      end
+    elsif whole_sfa_or_mf_building_sim
+      num_units_modeled = geometry_building_num_units
     end
 
     new_runner = OpenStudio::Measure::OSRunner.new(OpenStudio::WorkflowJSON.new)
@@ -378,6 +419,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       end
 
       if whole_sfa_or_mf_building_sim && num_units_modeled > 1
+      # if whole_sfa_or_mf_building_sim && num_units_modeled > 1 && unit_number > 1 # FIXME
         measures['BuildResidentialHPXML'][0]['battery_present'] = 'false' # limitation of OS-HPXML
       end
 
@@ -396,6 +438,13 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         arg_value = measures['ResStockArguments'][0][arg_name]
         additional_properties << "#{arg_name}=#{arg_value}"
       end
+      additional_properties << "geometry_building_num_units=#{geometry_building_num_units}" # Used by ReportSimulationOutput and ReportUtilityBills reporting measure
+      additional_properties << "geometry_num_floors_above_grade=#{geometry_num_floors_above_grade}" # Used by AddSharedWaterHeater measure
+      additional_properties << "geometry_corridor_position=#{['Double-Loaded Interior', 'Double Exterior'].include?(geometry_corridor_position)}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_water_heater_type=#{shared_water_heater_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
+      additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version

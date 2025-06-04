@@ -101,7 +101,11 @@ class Constants
     return []
   end
 
-  def self.Title24
-    return 'title24'
+  def self.Title24_2022
+    return 'title24_2022'
+  end
+
+  def self.Title24_2025
+    return 'title24_2025'
   end
 end

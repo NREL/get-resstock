@@ -515,7 +515,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     if args[:pv_system_present]
       args[:pv_system_num_bedrooms_served] = args[:geometry_unit_num_bedrooms]
 
-      if args[:pv_system_max_power_output] == Constants.Title24
+      if [Constants.Title24_2022, Constants.Title24_2025].include?(args[:pv_system_max_power_output])
         if args[:cec_climate_zone].nil?
           runner.registerError("ResStockArguments: CEC Climate Zone must be defined for #{Constants.Title24}.")
           return false
@@ -526,14 +526,59 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
         cfa = args[:geometry_unit_cfa] * n_du # building cfa
         if [HPXML::ResidentialTypeSFD, HPXML::ResidentialTypeSFA].include?(args[:geometry_unit_type]) || ((args[:geometry_unit_type] == HPXML::ResidentialTypeApartment) && (Float(args[:geometry_num_floors_above_grade].to_s) <= 3)) # SF or MF low-rise
           # Section 170.2(f)
-          a = { 1 => 0.793, 2 => 0.621, 3 => 0.628, 4 => 0.586, 5 => 0.585, 6 => 0.594, 7 => 0.572, 8 => 0.586, 9 => 0.613, 10 => 0.627, 11 => 0.836, 12 => 0.613, 13 => 0.894, 14 => 0.741, 15 => 1.56, 16 => 0.59 }[args[:cec_climate_zone]]
-          b = { 1 => 1.27, 2 => 1.22, 3 => 1.12, 4 => 1.21, 5 => 1.06, 6 => 1.23, 7 => 1.15, 8 => 1.37, 9 => 1.36, 10 => 1.41, 11 => 1.44, 12 => 1.4, 13 => 1.51, 14 => 1.26, 15 => 1.47, 16 => 1.22 }[args[:cec_climate_zone]]
+          if args[:pv_system_max_power_output] == Constants.Title24_2022
+            a = { 1 => 0.793, 2 => 0.621, 3 => 0.628, 4 => 0.586, 5 => 0.585, 6 => 0.594, 7 => 0.572, 8 => 0.586, 9 => 0.613, 10 => 0.627, 11 => 0.836, 12 => 0.613, 13 => 0.894, 14 => 0.741, 15 => 1.56, 16 => 0.59 }[args[:cec_climate_zone]]
+            b = { 1 => 1.27, 2 => 1.22, 3 => 1.12, 4 => 1.21, 5 => 1.06, 6 => 1.23, 7 => 1.15, 8 => 1.37, 9 => 1.36, 10 => 1.41, 11 => 1.44, 12 => 1.4, 13 => 1.51, 14 => 1.26, 15 => 1.47, 16 => 1.22 }[args[:cec_climate_zone]]
 
-          args[:pv_system_max_power_output] = (cfa * a) / 1000.0 + (n_du * b) # kW
+            args[:pv_system_max_power_output] = (cfa * a) / 1000.0 + (n_du * b) # kW
 
-          if args[:pv_system_max_power_output] < 1.8
-            args[:pv_system_present] = false
-            args[:pv_system_max_power_output] = 0
+            if args[:pv_system_max_power_output] < 1.8
+              args[:pv_system_present] = false
+              args[:pv_system_max_power_output] = 0
+            end
+
+          elsif args[:pv_system_max_power_output] == Constants.Title24_2025
+            a = { 1 => 0.793, 2 => 0.628, 3 => 0.629, 4 => 0.629, 5 => 0.587, 6 => 0.596, 7 => 0.575, 8 => 0.612, 9 => 0.645, 10 => 0.696, 11 => 0.965, 12 => 0.668, 13 => 1.029, 14 => 0.833, 15 => 1.892, 16 => 0.591 }[args[:cec_climate_zone]]
+            b = { 1 => 1.27, 2 => 1.22, 3 => 1.12, 4 => 1.21, 5 => 1.06, 6 => 1.23, 7 => 1.15, 8 => 1.37, 9 => 1.36, 10 => 1.41, 11 => 1.44, 12 => 1.40, 13 => 1.51, 14 => 1.26, 15 => 1.47, 16 => 1.22 }[args[:cec_climate_zone]]
+            c = { 1 => 0.0, 2 => 0.002, 3 => 0.0, 4 => 0.009, 5 => 0.0, 6 => 0.0, 7 => 0.001, 8 => 0.005, 9 => 0.007, 10 => 0.015, 11 => 0.027, 12 => 0.012, 13 => 0.029, 14 => 0.020, 15 => 0.071, 16 => 0.0 }[args[:cec_climate_zone]]
+
+            eer2adj = 4.7 # none or variable speed
+            eer2 = 0.0
+            if args[:cooling_system_type] != 'none'
+              if args[:cooling_system_cooling_efficiency_type] == HPXML::UnitsEER
+                eer2 = args[:cooling_system_cooling_efficiency]
+              elsif args[:cooling_system_cooling_efficiency_type] == HPXML::UnitsSEER
+                if args[:cooling_system_cooling_efficiency] <= 15 # single stage
+                  cop = 0.2692 * args[:cooling_system_cooling_efficiency] + 0.2706
+                  eer2 = cop * 3.41214
+                elsif args[:cooling_system_cooling_efficiency] <= 21 # two stage
+                  cop = 0.2773 * args[:cooling_system_cooling_efficiency] - 0.0018
+                  eer2 = cop * 3.41214
+                end
+              end
+            elsif args[:heat_pump_type] != 'none'
+              if args[:heat_pump_cooling_efficiency_type] == HPXML::UnitsSEER
+                if args[:heat_pump_cooling_efficiency] <= 15 # single stage
+                  cop = 0.2692 * args[:heat_pump_cooling_efficiency] + 0.2706
+                  eer2 = cop * 3.41214
+                elsif args[:heat_pump_cooling_efficiency] <= 21 # two stage
+                  cop = 0.2773 * args[:heat_pump_cooling_efficiency] - 0.0018
+                  eer2 = cop * 3.41214
+                end
+              end
+            end
+
+            if eer2 > 0.0
+              eer2adj = [eer2 - 7.0, 4.7].min
+            end
+
+            args[:pv_system_max_power_output] = ((cfa * a) / 1000.0) + (n_du * b) - ((cfa * c * eer2adj) / 1000.0) # kW
+
+            if args[:pv_system_max_power_output] < 4.0
+              args[:pv_system_present] = false
+              args[:pv_system_max_power_output] = 0
+            end
+
           end
         else # MF 4+
           # Section 170.2(g)
@@ -553,35 +598,51 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     if args[:battery_present]
       args[:battery_num_bedrooms_served] = args[:geometry_unit_num_bedrooms]
 
-      if (args[:battery_power] == Constants.Title24) || (args[:battery_capacity] == Constants.Title24)
+      if [Constants.Title24_2022, Constants.Title24_2025].include?(args[:battery_power]) || [Constants.Title24_2022, Constants.Title24_2025].include?(args[:battery_capacity])
         if !args[:pv_system_present]
-          runner.registerError("ResStockArguments: #{Constants.Title24} Battery not defined without PV.")
+          runner.registerError("ResStockArguments: Title24 Battery not defined without PV.")
           return false
         end
 
+        n_du = Float(args[:geometry_building_num_units].to_s)
+        args[:battery_num_bedrooms_served] *= n_du
+        cfa = args[:geometry_unit_cfa] * n_du # building cfa
         pv_system_max_power_output = args[:pv_system_max_power_output] / 1000.0 # kW
         if ((args[:geometry_unit_type] == HPXML::ResidentialTypeApartment) && (Float(args[:geometry_num_floors_above_grade].to_s) > 3)) # MF 4+
           # Section 170.2(h)
-          if args[:battery_power] == Constants.Title24
-            c = 0.26
-
-            args[:battery_power] = pv_system_max_power_output * c
-            args[:battery_power] *= 1000.0 # W
-          end
-
-          if args[:battery_capacity] == Constants.Title24
+          if args[:battery_capacity] == Constants.Title24_2022
             b = 1.03
             d = 0.925 # Based on Tesla Powerwall round trip efficiency (new)
 
-            args[:battery_capacity] = pv_system_max_power_output * b / (d**0.5)
+            args[:battery_capacity] = pv_system_max_power_output * b / (d**0.5) # kWh
 
             if args[:battery_capacity] < 10.0
               args[:battery_present] = false
               args[:battery_capacity] = Constants.Auto
+              args[:battery_power] = Constants.Auto
+            else
+              c = 0.26
+
+              args[:battery_power] = pv_system_max_power_output * c
+              args[:battery_power] *= 1000.0 # W
+            end
+          elsif args[:battery_capacity] == Constants.Title24_2025
+            b = { 1 => 1.88, 2 => 2.27, 3 => 1.88, 4 => 2.27, 5 => 1.88, 6 => 2.27, 7 => 2.27, 8 => 2.27, 9 => 2.27, 10 => 2.27, 11 => 2.27, 12 => 2.27, 13 => 2.27, 14 => 2.27, 15 => 2.85, 16 => 1.88 }[args[:cec_climate_zone]]
+            c = 0.925 # Based on Tesla Powerwall round trip efficiency (new)
+
+            args[:battery_capacity] = (cfa * b) / (1000.0 * (c**0.5)) # kWh
+
+            if args[:battery_capacity] < 10.0
+              args[:battery_present] = false
+              args[:battery_capacity] = Constants.Auto
+              args[:battery_power] = Constants.Auto
+            else
+              args[:battery_power] = args[:battery_capacity] / 4.0
+              args[:battery_power] *= 1000.0 # W
             end
           end
         else
-          runner.registerError("ResStockArguments: #{Constants.Title24} not defined for #{args[:geometry_unit_type]} with #{args[:geometry_num_floors_above_grade]} floor(s).")
+          runner.registerError("ResStockArguments: Title24 not defined for #{args[:geometry_unit_type]} with #{args[:geometry_num_floors_above_grade]} floor(s).")
           return false
         end
       end
@@ -885,7 +946,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     measure_arguments.each do |arg|
       arg_name = arg.name.to_sym
       value = args[arg_name]
-      next if value.nil? || (value == Constants.Auto) || (value == Constants.Title24)
+      next if value.nil? || (value == Constants.Auto) || ([Constants.Title24_2022, Constants.Title24_2025].include?(value))
 
       case arg.type.valueName.downcase
       when 'double'
