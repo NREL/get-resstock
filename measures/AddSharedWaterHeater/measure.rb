@@ -207,7 +207,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # prev_storage_tank = components[0]
     # end
     # heat_pump_tanks = []
-    heat_pump_loops.each_with_index do |(supply_loop, components), i|
+    heat_pump_loops.each_with_index do |(supply_loop, components), _i|
       storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp, hp_in_series)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 

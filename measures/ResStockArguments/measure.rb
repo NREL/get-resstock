@@ -600,7 +600,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
 
       if [Constants.Title24_2022, Constants.Title24_2025].include?(args[:battery_power]) || [Constants.Title24_2022, Constants.Title24_2025].include?(args[:battery_capacity])
         if !args[:pv_system_present]
-          runner.registerError("ResStockArguments: Title24 Battery not defined without PV.")
+          runner.registerError('ResStockArguments: Title24 Battery not defined without PV.')
           return false
         end
 
@@ -946,7 +946,7 @@ class ResStockArguments < OpenStudio::Measure::ModelMeasure
     measure_arguments.each do |arg|
       arg_name = arg.name.to_sym
       value = args[arg_name]
-      next if value.nil? || (value == Constants.Auto) || ([Constants.Title24_2022, Constants.Title24_2025].include?(value))
+      next if value.nil? || (value == Constants.Auto) || [Constants.Title24_2022, Constants.Title24_2025].include?(value)
 
       case arg.type.valueName.downcase
       when 'double'
