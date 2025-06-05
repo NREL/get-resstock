@@ -61,7 +61,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     shared_water_heater_fuel_type = hpxml_bldg.header.extension_properties['shared_water_heater_fuel_type']
     shared_boiler_efficiency_afue = hpxml_bldg.header.extension_properties['shared_boiler_efficiency_afue'].to_f
     cec_climate_zone = hpxml_bldg.header.extension_properties['cec_climate_zone']
-    include_swing_tank = false # FIXME: true if electric heat pump
+
+    include_swing_tank = false
+    if shared_water_heater_type.include?(Constant::HeatPumpWaterHeater) &&
+       shared_water_heater_fuel_type == HPXML::FuelTypeElectricity
+      include_swing_tank = true
+    end
 
     # Skip measure if no shared heating system
     if shared_water_heater_type == 'none'
@@ -196,27 +201,28 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # heating_op_scheme = OpenStudio::Model::PlantEquipmentOperationHeatingLoad.new(model)
 
-    # Add Storage Tank(s)
-    prev_storage_tank = nil
+    # Add Tank(s)
+    prev_tank = nil
 
     # boiler_loops.each do |supply_loop, components|
     # storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp)
     # storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
-    # components << storage_tank
-    # prev_storage_tank = components[0]
-    # end
-    # heat_pump_tanks = []
     heat_pump_loops.each_with_index do |(supply_loop, components), _i|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp, hp_in_series)
-      storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
+      if not include_swing_tank
+        tank = Tanks.create_storage(model, supply_loop, storage_loop, heat_pump_storage_tank_volume, prev_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, heat_pump_loop_sp, hp_in_series)
+      else
+        # tank_capacity /= 2 # FIXME
+        tank = Tanks.create_swing(model, supply_loop, storage_loop, swing_tank_volume, prev_tank, "#{supply_loop.name} Main Swing Tank", swing_tank_capacity, heat_pump_loop_sp, hp_in_series)
+      end
+      tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
-      components << storage_tank
-      prev_storage_tank = components[0]
+      components << tank
+      prev_tank = components[0]
 
-      # heating_op_scheme.addEquipment(storage_tank)
-      # heating_op_scheme.addLoadRange(heat_pump_capacity * (i + 1), [storage_tank])
-      # heat_pump_tanks << storage_tank
+      # heating_op_scheme.addEquipment(tank)
+      # heating_op_scheme.addLoadRange(heat_pump_capacity * (i + 1), [tank])
+      # heat_pump_tanks << tank
     end
     # heating_op_scheme.addLoadRange(heat_pump_capacity * heat_pump_loops.size, heat_pump_tanks)
     # heating_op_scheme.addLoadRange(1000, heat_pump_tanks)
@@ -241,14 +247,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # storage_loop.setLoadDistributionScheme('UniformLoad')
     # storage_loop.setLoadDistributionScheme('Sequential')
 
-    # Add Swing Tank
-    swing_tank_capacity /= 2 # FIXME
-    swing_tank = Tanks.create_swing(model, storage_loop, dhw_loop, swing_tank_volume, swing_tank_capacity, 'Swing Tank', shared_water_heater_fuel_type, dhw_loop_sp)
-    swing_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) if !swing_tank.nil? # Used by reporting measure
-
     # Add Heat Exchangers
     # HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') # FIXME: this splits cold water to storage/swing tanks?
-    HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger') if swing_tank.nil?
+    HeatExchangers.create(model, storage_loop, dhw_loop, 'DHW Heat Exchanger')
     space_heating_hx = HeatExchangers.create(model, storage_loop, space_heating_loop, 'Space Heating Heat Exchanger') if shared_water_heater_type.include?(Constant::SpaceHeating)
 
     t_amb = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Site Outdoor Air Drybulb Temperature')
@@ -284,7 +285,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       elsif component.to_HeatPumpAirToWaterFuelFiredHeating.is_initialized
         hot_node = component.outletModelObject.get.to_Node.get
       elsif component.to_WaterHeaterStratified.is_initialized
-        hot_node = component.supplyOutletModelObject.get.to_Node.get
+        # hot_node = component.supplyOutletModelObject.get.to_Node.get
       end
       # hot_node = storage_tank.sourceSideInletModelObject.get.to_Node.get
       # cold_node = storage_tank.sourceSideOutletModelObject.get.to_Node.get
@@ -418,6 +419,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Actuators
     ems_actuator_to_remove = [
       'water heater ec adj',
+      'water heater hpwh ec adj',
       'solar hot water pump'
     ]
     ems_actuator_to_remove += [

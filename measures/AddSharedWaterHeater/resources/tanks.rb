@@ -161,7 +161,7 @@ class Tanks
     return storage_tank
   end
 
-  def self.create_swing(model, demand_side_loop, supply_side_loop, volume, capacity, name, fuel_type, setpoint)
+  def self.create_swing(model, demand_side_loop, supply_side_loop, volume, prev_swing_tank, name, capacity, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     return if volume == 0
 
     # this would be in series with the main storage tanks, downstream of it
@@ -201,11 +201,21 @@ class Tanks
     # swing_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # swing_tank.setSourceSideDesignFlowRate() # FIXME
     swing_tank.setEndUseSubcategory(name)
-    swing_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    swing_tank.setHeaterFuelType(EPlus.fuel_type(HPXML::FuelTypeElectricity))
     swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
 
-    supply_side_loop.addSupplyBranchForComponent(swing_tank)
-    demand_side_loop.addDemandBranchForComponent(swing_tank)
+    if prev_swing_tank.nil? || !hp_in_series
+      supply_side_loop.addSupplyBranchForComponent(swing_tank) # first one is a new supply branch
+    else
+      if boiler_on_hp_outlet
+        swing_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
+      else
+        swing_tank.addToNode(supply_side_loop.supplyOutletNode)
+      end
+    end
+    if !supply_side_loop.nil?
+      demand_side_loop.addDemandBranchForComponent(swing_tank)
+    end
 
     return swing_tank
   end

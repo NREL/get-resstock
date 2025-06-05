@@ -2,7 +2,8 @@
 
 class Supply
   def self.get_supply_counts(type, _num_beds, num_units)
-    boiler_count = 1
+    # boiler_count = 1
+    boiler_count = 0
     heat_pump_count = 0
 
     if type.include?(Constant::HeatPumpWaterHeater)
@@ -78,22 +79,17 @@ class Supply
       component.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
     elsif type.include?(Constant::HeatPumpWaterHeater)
       if fuel_type == HPXML::FuelTypeElectricity
-        component = OpenStudio::Model::WaterHeaterHeatPump.new(model)
-        component.setName(name)
-        # tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type)
-        
-        ###
-        # component = OpenStudio::Model::WaterHeaterHeatPumpPumpedCondenser.new(model)
-        # setpoint = SetPoints.get_heat_pump_setpoint(type, fuel_type, t_amb)
-        # tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type,)
-        # self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
-        ###
+        coil = OpenStudio::Model::CoilWaterHeatingAirToWaterHeatPump.new(model)
+        tank = OpenStudio::Model::WaterHeaterStratified.new(model)
+        fan = OpenStudio::Model::FanOnOff.new(model)
+        compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
+        compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 60.0)
+        inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
+        inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
 
-        # tank.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
-        # component.setTank(tank)
-        # fan = component.fan
-        # fan.additionalProperties.setFeature('ObjectType', Constant::ObjectNameWaterHeater) # Used by reporting measure
-        # component = tank
+        component = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
+        component = component.tank
+        component.setName(name)
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName(name)

@@ -2719,8 +2719,11 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
       elsif object.to_EvaporativeCoolerDirectResearchSpecial.is_initialized
         return { [FT::Elec, EUT::Cooling] => ["Evaporative Cooler #{EPlus::FuelTypeElectricity} Energy"] }
 
-      elsif object.to_CoilWaterHeatingAirToWaterHeatPumpWrapped.is_initialized || object.to_CoilWaterHeatingAirToWaterHeatPump.is_initialized
+      elsif object.to_CoilWaterHeatingAirToWaterHeatPumpWrapped.is_initialized
         return { [FT::Elec, EUT::HotWater] => ["Cooling Coil Water Heating #{EPlus::FuelTypeElectricity} Energy"] }
+
+      elsif object.to_CoilWaterHeatingAirToWaterHeatPump.is_initialized
+        return { [FT::Elec, EUT::HotWater] => ["Cooling Coil Water Heating #{EPlus::FuelTypeElectricity} Energy", "Cooling Coil Crankcase Heater #{EPlus::FuelTypeElectricity} Energy"] }
 
       elsif object.to_FanSystemModel.is_initialized || object.to_FanOnOff.is_initialized
         if object_type == Constants.ObjectNameWaterHeater
