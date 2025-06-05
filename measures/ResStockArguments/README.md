@@ -3612,19 +3612,6 @@ Array tilt of the PV system. Can also enter, e.g., RoofPitch, RoofPitch+20, Lati
 
 <br/>
 
-**PV System: Maximum Power Output**
-
-Maximum power output of the PV system. For a shared system, this is the total building maximum power output.
-
-- **Name:** ``pv_system_max_power_output``
-- **Type:** ``Double``
-
-- **Units:** ``W``
-
-- **Required:** ``true``
-
-<br/>
-
 **PV System: Inverter Efficiency**
 
 Inverter efficiency of the PV system. If there are two PV systems, this will apply to both. If not provided, the OS-HPXML default (see <a href='https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-photovoltaics'>HPXML Photovoltaics</a>) is used.
@@ -3755,28 +3742,6 @@ The space type for the lithium ion battery location. If not provided, the OS-HPX
 - **Required:** ``false``
 
 - **Choices:** `auto`, `conditioned space`, `basement - conditioned`, `basement - unconditioned`, `crawlspace`, `crawlspace - vented`, `crawlspace - unvented`, `crawlspace - conditioned`, `attic`, `attic - vented`, `attic - unvented`, `garage`, `outside`
-
-<br/>
-
-**Battery: Rated Power Output**
-
-The rated power output of the lithium ion battery. If not provided, the OS-HPXML default (see <a href='https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries'>HPXML Batteries</a>) is used.
-
-- **Name:** ``battery_power``
-- **Type:** ``String``
-
-- **Required:** ``false``
-
-<br/>
-
-**Battery: Nominal Capacity**
-
-The nominal capacity of the lithium ion battery. If not provided, the OS-HPXML default (see <a href='https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries'>HPXML Batteries</a>) is used.
-
-- **Name:** ``battery_capacity``
-- **Type:** ``String``
-
-- **Required:** ``false``
 
 <br/>
 
@@ -5128,12 +5093,34 @@ E.g., '2000' or 'auto'.
 
 <br/>
 
+**PV System: Maximum Power Output**
+
+E.g., '4000' or 'auto'.
+
+- **Name:** ``pv_system_max_power_output``
+- **Type:** ``String``
+
+- **Required:** ``true``
+
+<br/>
+
 **Building Construction: Vintage**
 
 The building vintage, used for informational purposes only.
 
 - **Name:** ``vintage``
 - **Type:** ``String``
+
+- **Required:** ``false``
+
+<br/>
+
+**Climate Zone: CEC**
+
+The CEC climate zone.
+
+- **Name:** ``cec_climate_zone``
+- **Type:** ``Integer``
 
 - **Required:** ``false``
 
@@ -5652,6 +5639,28 @@ Whether the heat pump uses the existing system as backup.
 - **Type:** ``Boolean``
 
 - **Required:** ``false``
+
+<br/>
+
+**Battery: Rated Power Output**
+
+E.g., 'auto'.
+
+- **Name:** ``battery_power``
+- **Type:** ``String``
+
+- **Required:** ``true``
+
+<br/>
+
+**Battery: Nominal Capacity**
+
+E.g., 'auto'.
+
+- **Name:** ``battery_capacity``
+- **Type:** ``String``
+
+- **Required:** ``true``
 
 <br/>
 

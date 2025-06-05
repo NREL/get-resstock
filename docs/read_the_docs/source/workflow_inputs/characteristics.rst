@@ -728,18 +728,6 @@ Arguments
      - Choice
      - auto, conditioned space, basement - conditioned, basement - unconditioned, crawlspace, crawlspace - vented, crawlspace - unvented, crawlspace - conditioned, attic, attic - vented, attic - unvented, garage, outside
      - The space type for the lithium ion battery location. If not provided, the OS-HPXML default (see `HPXML Batteries <https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries>`_) is used.
-   * - ``battery_power``
-     - false
-     - W
-     - Double
-     - auto
-     - The rated power output of the lithium ion battery. If not provided, the OS-HPXML default (see `HPXML Batteries <https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries>`_) is used.
-   * - ``battery_capacity``
-     - false
-     - kWh
-     - Double
-     - auto
-     - The nominal capacity of the lithium ion battery. If not provided, the OS-HPXML default (see `HPXML Batteries <https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries>`_) is used.
    * - ``battery_usable_capacity``
      - false
      - kWh
@@ -752,6 +740,18 @@ Arguments
      - Double
      - auto
      - The round trip efficiency of the lithium ion battery. If not provided, the OS-HPXML default (see `HPXML Batteries <https://openstudio-hpxml.readthedocs.io/en/v1.8.1/workflow_inputs.html#hpxml-batteries>`_) is used.
+   * - ``battery_power``
+     - false
+     - W
+     - Double
+     -
+     - E.g., 'auto'.
+   * - ``battery_capacity``
+     - false
+     - kWh
+     - Double
+     -
+     - E.g., 'auto'.
 
 Options
 *******
@@ -767,10 +767,10 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - Stock saturation
      - ``battery_present``
      - ``battery_location``
-     - ``battery_power``
-     - ``battery_capacity``
      - ``battery_usable_capacity``
      - ``battery_round_trip_efficiency``
+     - ``battery_power``
+     - ``battery_capacity``
 
    * - None
      - 100%
@@ -809,9 +809,9 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - true
      - auto
      - auto
-     - auto
-     - auto
      - 0.8
+     - auto
+     - auto
 
 .. _bedrooms:
 
@@ -998,6 +998,26 @@ Assumption
 - \If the sample is outside California, the option is set to None.
 
 
+Arguments
+*********
+
+.. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+
+   * - Name
+     - Required
+     - Units
+     - Type
+     - Choices
+     - Description
+   * - ``cec_climate_zone``
+     - false
+     - 
+     - Integer
+     -
+     - The CEC climate zone.
+
 Options
 *******
 
@@ -1010,41 +1030,59 @@ From ``project_national`` the list of options, option stock sturation, and optio
 
    * - Option name
      - Stock saturation
+     - ``cec_climate_zone``
 
    * - 1
      - 0.065%
+     - 1
    * - 2
      - 0.3%
+     - 2
    * - 3
      - 1.2%
+     - 3
    * - 4
      - 0.54%
+     - 4
    * - 5
      - 0.11%
+     - 5
    * - 6
      - 0.87%
+     - 6
    * - 7
      - 0.63%
+     - 7
    * - 8
      - 1.1%
+     - 8
    * - 9
      - 1.6%
+     - 9
    * - 10
      - 0.99%
+     - 10
    * - 11
      - 0.34%
+     - 11
    * - 12
      - 1.3%
+     - 12
    * - 13
      - 0.58%
+     - 13
    * - 14
      - 0.26%
+     - 14
    * - 15
      - 0.24%
+     - 15
    * - 16
      - 0.24%
+     - 16
    * - None
      - 90%
+     - 
 
 .. _ceiling_fan:
 
@@ -60105,12 +60143,6 @@ Arguments
      - String
      -
      - Array tilt of the PV system. Can also enter, e.g., RoofPitch, RoofPitch+20, Latitude, Latitude-15, etc.
-   * - ``pv_system_max_power_output``
-     - true
-     - W
-     - Double
-     -
-     - Maximum power output of the PV system. For a shared system, this is the total building maximum power output.
    * - ``pv_system_inverter_efficiency``
      - false
      - Frac
@@ -60159,6 +60191,12 @@ Arguments
      - Double
      -
      - Maximum power output of the second PV system. For a shared system, this is the total building maximum power output.
+   * - ``pv_system_max_power_output``
+     - true
+     - W
+     - Double
+     -
+     - E.g., '4000' or 'auto'.
 
 Options
 *******
@@ -60177,7 +60215,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - ``pv_system_location``
      - ``pv_system_tracking``
      - ``pv_system_array_tilt``
-     - ``pv_system_max_power_output``
      - ``pv_system_inverter_efficiency``
      - ``pv_system_system_losses_fraction``
      - ``pv_system_2_present``
@@ -60186,6 +60223,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - ``pv_system_2_tracking``
      - ``pv_system_2_array_tilt``
      - ``pv_system_2_max_power_output``
+     - ``pv_system_max_power_output``
 
    * - 1.0 kWDC
      - 0.025%
@@ -60194,7 +60232,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 1000
      - auto
      - auto
      - false
@@ -60203,6 +60240,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 1000
    * - 3.0 kWDC
      - 0.18%
      - true
@@ -60210,7 +60248,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 3000
      - auto
      - auto
      - false
@@ -60219,6 +60256,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 3000
    * - 5.0 kWDC
      - 0.28%
      - true
@@ -60226,7 +60264,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 5000
      - auto
      - auto
      - false
@@ -60235,6 +60272,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 5000
    * - 7.0 kWDC
      - 0.21%
      - true
@@ -60242,7 +60280,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 7000
      - auto
      - auto
      - false
@@ -60251,6 +60288,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 7000
    * - 9.0 kWDC
      - 0.14%
      - true
@@ -60258,7 +60296,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 9000
      - auto
      - auto
      - false
@@ -60267,6 +60304,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 9000
    * - 11.0 kWDC
      - 0.074%
      - true
@@ -60274,7 +60312,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 11000
      - auto
      - auto
      - false
@@ -60283,6 +60320,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 11000
    * - 13.0 kWDC
      - 0.03%
      - true
@@ -60290,7 +60328,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 13000
      - auto
      - auto
      - false
@@ -60299,6 +60336,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - roofpitch
      - 0
+     - 13000
    * - None
      - 99%
      - false
@@ -60306,7 +60344,6 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - roof
      - auto
      - roofpitch
-     - 0
      - auto
      - auto
      - false
@@ -60314,6 +60351,7 @@ From ``project_national`` the list of options, option stock sturation, and optio
      - auto
      - auto
      - roofpitch
+     - 0
      - 0
 
 .. _plug_load_diversity:
