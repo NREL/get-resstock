@@ -75,7 +75,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_tank_or_hx, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -145,11 +145,16 @@ class Tanks
       storage_tank.setSourceSideOutletHeight(0)
     end
 
-    if prev_storage_tank.nil? || !hp_in_series
+    if prev_tank_or_hx.nil? || !hp_in_series
       supply_side_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
     else
       if boiler_on_hp_outlet
-        storage_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
+        # remaining are added in series
+        if prev_tank_or_hx.is_a?(OpenStudio::Model::WaterHeaterStratified)
+          storage_tank.addToNode(prev_tank_or_hx.useSideOutletModelObject.get.to_Node.get)
+        elsif prev_tank_or_hx.is_a?(OpenStudio::Model::HeatExchangerFluidToFluid)
+          storage_tank.addToNode(prev_tank_or_hx.supplyOutletModelObject.get.to_Node.get)
+        end
       else
         storage_tank.addToNode(supply_side_loop.supplyOutletNode)
       end
@@ -161,7 +166,7 @@ class Tanks
     return storage_tank
   end
 
-  def self.create_swing(model, demand_side_loop, supply_side_loop, volume, prev_swing_tank, name, capacity, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_swing(model, supply_side_loop, volume, prev_hx, name, capacity, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     return if volume == 0
 
     # this would be in series with the main storage tanks, downstream of it
@@ -204,17 +209,14 @@ class Tanks
     swing_tank.setHeaterFuelType(EPlus.fuel_type(HPXML::FuelTypeElectricity))
     swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
 
-    if prev_swing_tank.nil? || !hp_in_series
+    if prev_hx.nil? || !hp_in_series
       supply_side_loop.addSupplyBranchForComponent(swing_tank) # first one is a new supply branch
     else
       if boiler_on_hp_outlet
-        swing_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
+        swing_tank.addToNode(prev_hx.supplyOutletModelObject.get.to_Node.get) # remaining are added in series
       else
         swing_tank.addToNode(supply_side_loop.supplyOutletNode)
       end
-    end
-    if !supply_side_loop.nil?
-      demand_side_loop.addDemandBranchForComponent(swing_tank)
     end
 
     return swing_tank

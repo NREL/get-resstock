@@ -360,18 +360,19 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         else
           shared_water_heater_type = Constant::WaterHeaterTypeBoiler
         end
-        if water_heater_efficiency.include?('Standard')
-          shared_boiler_efficiency_afue = 0.8
-        elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
-          shared_boiler_efficiency_afue = 0.85
-        elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
-          shared_boiler_efficiency_afue = 0.9
-        end
       elsif water_heater_efficiency.include?('Electric')
         shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
         if water_heater_efficiency.include?('Electric Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
         end
+      end
+
+      if water_heater_efficiency.include?('Standard')
+        shared_boiler_efficiency_afue = 0.8
+      elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
+        shared_boiler_efficiency_afue = 0.85
+      elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
+        shared_boiler_efficiency_afue = 0.9
       end
     end
 

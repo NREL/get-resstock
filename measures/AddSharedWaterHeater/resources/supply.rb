@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_counts(type, _num_beds, num_units)
-    boiler_count = 1
-    # boiler_count = 0
+  def self.get_supply_counts(type, _num_beds, num_units, include_swing_tank)
+    boiler_count = 0
+    if not include_swing_tank
+      boiler_count = 1
+    end
     heat_pump_count = 0
 
     if type.include?(Constant::HeatPumpWaterHeater)
