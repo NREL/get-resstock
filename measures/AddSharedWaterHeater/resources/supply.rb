@@ -2,8 +2,8 @@
 
 class Supply
   def self.get_supply_counts(type, _num_beds, num_units)
-    # boiler_count = 1
-    boiler_count = 0
+    boiler_count = 1
+    # boiler_count = 0
     heat_pump_count = 0
 
     if type.include?(Constant::HeatPumpWaterHeater)
@@ -58,10 +58,12 @@ class Supply
     return boiler_capacity, heat_pump_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, name, capacity, boiler_eff_afue, t_amb, num_units)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units)
+    name = supply_side_loop.name
+
     if type.include?(Constant::Boiler)
       component = OpenStudio::Model::BoilerHotWater.new(model)
-      component.setName(name)
+      component.setName("#{name} Water Heater")
       component.setNominalThermalEfficiency(boiler_eff_afue)
       component.setNominalCapacity(capacity)
       component.setFuelType(EPlus.fuel_type(fuel_type))
@@ -80,19 +82,25 @@ class Supply
     elsif type.include?(Constant::HeatPumpWaterHeater)
       if fuel_type == HPXML::FuelTypeElectricity
         coil = OpenStudio::Model::CoilWaterHeatingAirToWaterHeatPump.new(model)
+        coil.setName("#{name} Coil")
+        coil.setCrankcaseHeaterCapacity(0.0)
+
         tank = OpenStudio::Model::WaterHeaterStratified.new(model)
+        tank.setName("#{name} Water Heater")
+
         fan = OpenStudio::Model::FanOnOff.new(model)
+        fan.setName("#{name} Fan")
+
         compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 60.0)
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
 
         component = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
-        component = component.tank
-        component.setName(name)
+        component = component.tank # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
-        component.setName(name)
+        component.setName("#{name} Water Heater")
         component.setFuelType(EPlus.fuel_type(fuel_type))
         # component.setEndUseSubcategory()
         component.setNominalHeatingCapacity(capacity)

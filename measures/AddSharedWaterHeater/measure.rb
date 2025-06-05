@@ -227,11 +227,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # heating_op_scheme.addLoadRange(heat_pump_capacity * heat_pump_loops.size, heat_pump_tanks)
     # heating_op_scheme.addLoadRange(1000, heat_pump_tanks)
     boiler_loops.each do |supply_loop, components|
-      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_storage_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp, true, boiler_on_hp_outlet)
+      storage_tank = Tanks.create_storage(model, supply_loop, storage_loop, boiler_storage_tank_volume, prev_tank, "#{supply_loop.name} Main Storage Tank", shared_water_heater_fuel_type, boiler_loop_sp, true, boiler_on_hp_outlet)
       storage_tank.additionalProperties.setFeature('ObjectType', Constant::ObjectNameSharedWaterHeater) # Used by reporting measure
 
       components << storage_tank
-      prev_storage_tank = components[0]
+      prev_tank = components[0]
 
       # heating_op_scheme.addEquipment(storage_tank)
       # heating_op_scheme.addLoadRange(10000, [storage_tank])
@@ -258,17 +258,17 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Supply Components
     boiler_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
       components << component
     end
     backup_node = nil
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, Constant::HeatPumpWaterHeater, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
       components << component
 
       # backup_node = component.inletModelObject.get.to_Node.get if backup_node.nil?
 
-      # boiler = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, "#{supply_loop.name} Water Heater", boiler_capacity, shared_boiler_efficiency_afue, t_amb)
+      # boiler = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb)
 
       # heating_op_scheme = OpenStudio::Model::PlantEquipmentOperationHeatingLoad.new(model)
       # heating_op_scheme.addEquipment(component)
