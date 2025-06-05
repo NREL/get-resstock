@@ -8,7 +8,8 @@ import warnings
 warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
-folder = 'gahp_cop_1pt0_series_4_latest'
+# folder = 'gahp_cop_1pt0_series_4'
+folder = 'gahp_cop_1pt0_series_6_latest'
 
 def read_csv(csv_file_path, **kwargs) -> pd.DataFrame:
     default_na_values = pd._libs.parsers.STR_NA_VALUES
@@ -163,8 +164,8 @@ xs_map = {'build_existing_model.geometry_stories': 'Number of Stories',
           'build_existing_model.hot_water_fixtures': 'Hot Water Fixtures',
           'All Buildings': 'All Buildings'}
 
-histogram = True
-per_unit = False
+histogram = False
+per_unit = True
 for x in xs:
     if x == 'build_existing_model.geometry_building_number_units_mf':
         category_orders = {'build_existing_model.geometry_building_number_units_mf': ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '24', '30', '36', '43', '67', '116', '183', '326']}
