@@ -61,7 +61,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     shared_water_heater_fuel_type = hpxml_bldg.header.extension_properties['shared_water_heater_fuel_type']
     shared_boiler_efficiency_afue = hpxml_bldg.header.extension_properties['shared_boiler_efficiency_afue'].to_f
     cec_climate_zone = hpxml_bldg.header.extension_properties['cec_climate_zone']
-    include_swing_tank = true # FIXME: true if electric heat pump
+    include_swing_tank = false # FIXME: true if electric heat pump
 
     # Skip measure if no shared heating system
     if shared_water_heater_type == 'none'

@@ -76,20 +76,24 @@ class Supply
       boiler_eff_curve = Curves.create_curve_bicubic(model, [1.111720116, 0.078614078, -0.400425756, 0.0, -0.000156783, 0.009384599, 0.234257955, 1.32927e-06, -0.004446701, -1.22498e-05], 'NonCondensingBoilerEff', 0.1, 1.0, 20.0, 80.0)
       component.setNormalizedBoilerEfficiencyCurve(boiler_eff_curve)
       component.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
-
-      supply_side_loop.addSupplyBranchForComponent(component)
     elsif type.include?(Constant::HeatPumpWaterHeater)
       if fuel_type == HPXML::FuelTypeElectricity
-        component = OpenStudio::Model::WaterHeaterHeatPumpPumpedCondenser.new(model)
-        setpoint = SetPoints.get_heat_pump_setpoint(type, fuel_type, t_amb)
-        tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type,)
+        component = OpenStudio::Model::WaterHeaterHeatPump.new(model)
+        component.setName(name)
+        # tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type)
+        
+        ###
+        # component = OpenStudio::Model::WaterHeaterHeatPumpPumpedCondenser.new(model)
+        # setpoint = SetPoints.get_heat_pump_setpoint(type, fuel_type, t_amb)
+        # tank = Tanks.create_storage(model, supply_side_loop, nil, 80.0, nil, name, fuel_type,)
         # self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+        ###
 
-        tank.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
-        component.setTank(tank)
-        fan = component.fan
-        fan.additionalProperties.setFeature('ObjectType', Constant::ObjectNameWaterHeater) # Used by reporting measure
-        component = tank
+        # tank.additionalProperties.setFeature('IsCombiBoiler', true) # Used by reporting measure
+        # component.setTank(tank)
+        # fan = component.fan
+        # fan.additionalProperties.setFeature('ObjectType', Constant::ObjectNameWaterHeater) # Used by reporting measure
+        # component = tank
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName(name)
@@ -125,10 +129,9 @@ class Supply
         # Curves
         cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr = Curves.get_heat_pump_air_to_water_fuel_fired_heating_curves(model, component, t_amb)
         Curves.set_heat_pump_air_to_water_fuel_fired_heating_curves(component, cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr)
-
-        supply_side_loop.addSupplyBranchForComponent(component)
       end
     end
+    supply_side_loop.addSupplyBranchForComponent(component)
 
     return component
   end

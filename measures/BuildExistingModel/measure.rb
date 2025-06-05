@@ -349,7 +349,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       end
     end
 
-    if (num_units >= 10) && (bldg_data['Water Heater In Unit'] == 'No')
+    if (num_units >= 2) && (bldg_data['Water Heater In Unit'] == 'No')
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
@@ -367,11 +367,12 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
           shared_boiler_efficiency_afue = 0.9
         end
-      elsif water_heater_efficiency.include?('Electric Heat Pump')
+      elsif water_heater_efficiency.include?('Electric')
         shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
-        shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        if water_heater_efficiency.include?('Electric Heat Pump')
+          shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        end
       end
-
     end
 
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
