@@ -75,7 +75,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_tank_or_hx, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_tank_or_hx, name, _fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -103,7 +103,8 @@ class Tanks
     storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2SetpointTemperatureSchedule(setpoint_schedule)
     storage_tank.setHeater2Capacity(capacity)
-    storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    # storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    storage_tank.setHeaterFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
     storage_tank.setHeaterThermalEfficiency(1) # FIXME: apply_solar_thermal
 
     # amb = 40 # C

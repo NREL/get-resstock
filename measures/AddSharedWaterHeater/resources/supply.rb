@@ -68,7 +68,8 @@ class Supply
       component.setName("#{name} Water Heater")
       component.setNominalThermalEfficiency(boiler_eff_afue)
       component.setNominalCapacity(capacity)
-      component.setFuelType(EPlus.fuel_type(fuel_type))
+      # component.setFuelType(EPlus.fuel_type(fuel_type))
+      component.setFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
       # component.setMinimumPartLoadRatio(0.0) # FIXME: default
       component.setMinimumPartLoadRatio(0.2) # FIXME: hand calculation; this w/GAHP is pretty good, and you don't need AVM
       component.setMaximumPartLoadRatio(1.0)
@@ -99,7 +100,10 @@ class Supply
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
 
         component = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
-        component = component.tank # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
+        component = component.tank.to_WaterHeaterStratified.get # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
+
+        component.setTankHeight(2.0)
+        component.setTankVolume(UnitConversions.convert(200.0, 'gal', 'm^3'))
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName("#{name} Water Heater")

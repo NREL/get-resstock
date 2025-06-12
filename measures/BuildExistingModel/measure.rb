@@ -364,6 +364,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
         shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
         if water_heater_efficiency.include?('Electric Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+
+          hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
+          if hvac_shared_efficiencies.include?('Heating')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
+          end
         end
       end
 
