@@ -349,7 +349,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       end
     end
 
-    if (num_units >= 2) && (bldg_data['Water Heater In Unit'] == 'No')
+    if (num_units >= 10) && (bldg_data['Water Heater In Unit'] == 'No')
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
@@ -366,7 +366,8 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
 
           hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
-          if hvac_shared_efficiencies.include?('Heating')
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Standard')
             shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
           end
         end
@@ -395,7 +396,8 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     end
 
     num_units_modeled = 1
-    max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
+    # max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
+    max_num_units_modeled = 5
     unit_multipliers = []
     if use_unit_multipliers
       if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1

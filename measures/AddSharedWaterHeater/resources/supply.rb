@@ -103,7 +103,10 @@ class Supply
         component = component.tank.to_WaterHeaterStratified.get # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
 
         component.setTankHeight(2.0)
-        component.setTankVolume(UnitConversions.convert(200.0, 'gal', 'm^3'))
+        component.setTankVolume(UnitConversions.convert(200.0, 'gal', 'm^3')) # FIXME
+        if type.include?(Constant::SpaceHeating)
+          component.setTankVolume(component.tankVolume.get * 1.5) # Avoid "Change over rate is too fast" FIXME
+        end
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName("#{name} Water Heater")

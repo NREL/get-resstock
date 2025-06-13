@@ -61,17 +61,19 @@ workflow_generator:
         - name: Boiler Heating Energy # 1b
         - name: Fuel-fired Absorption HeatPump Fuel Energy # 2a
         - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy # 2b
+        - name: Water Heater Electricity Energy
+        - name: Water Heater Heating Energy
         - name: Boiler Inlet Temperature
         - name: Boiler Outlet Temperature
         - name: Fuel-fired Absorption HeatPump Inlet Temperature
         - name: Fuel-fired Absorption HeatPump Outlet Temperature
         - name: Water Heater Tank Temperature
-        - name: Performance Curve Output Value
-        - name: CapCurveFuncTempAct Output
-        - name: EIRCurveFuncTempAct Output
-        - name: AuxElecEIRCurveFuncTempCurveAct Output
-        - name: eir_mult_output
-        - name: gahp_1_ago_output
+        # - name: Performance Curve Output Value
+        # - name: CapCurveFuncTempAct Output
+        # - name: EIRCurveFuncTempAct Output
+        # - name: AuxElecEIRCurveFuncTempCurveAct Output
+        # - name: eir_mult_output
+        # - name: gahp_1_ago_output
         - name: Site Mains Water Temperature
         # - name: Water Heater NaturalGas Energy
         # - name: Boiler Ancillary NaturalGas Energy
