@@ -87,6 +87,47 @@ class Supply
         coil = OpenStudio::Model::CoilWaterHeatingAirToWaterHeatPump.new(model)
         coil.setName("#{name} Coil")
         coil.setCrankcaseHeaterCapacity(0.0)
+        #Option 1: Copeland spec sheet
+        coil_type = 'spec' #'spec', 'lab'
+        if coil_type == 'spec'
+          # Curves
+          hpwh_cap = OpenStudio::Model::CurveBiquadratic.new(model)
+          hpwh_cap.setName('HPWH-Cap-fT')
+          hpwh_cap.setCoefficient1Constant(2.00064)
+          hpwh_cap.setCoefficient2x(0.04987)
+          hpwh_cap.setCoefficient3xPOW2(0.00013004)
+          hpwh_cap.setCoefficient4y(0.04114)
+          hpwh_cap.setCoefficient5yPOW2(-0.00033391)
+          hpwh_cap.setCoefficient6xTIMESY(0.00001336)
+          hpwh_cap.setMinimumValueofx(0)
+          hpwh_cap.setMaximumValueofx(100)
+          hpwh_cap.setMinimumValueofy(0)
+          hpwh_cap.setMaximumValueofy(100)
+
+          hpwh_cop = OpenStudio::Model::CurveBiquadratic.new(model)
+          hpwh_cop.setName('HPWH-COP-fT')
+          hpwh_cop.setCoefficient1Constant(1.8849)
+          hpwh_cop.setCoefficient2x(0.02497)
+          hpwh_cop.setCoefficient3xPOW2(0.00003162)
+          hpwh_cop.setCoefficient4y(-0.03377)
+          hpwh_cop.setCoefficient5yPOW2(0.00021905)
+          hpwh_cop.setCoefficient6xTIMESY(-0.00030450)
+          hpwh_cop.setMinimumValueofx(0)
+          hpwh_cop.setMaximumValueofx(100)
+          hpwh_cop.setMinimumValueofy(0)
+          hpwh_cop.setMaximumValueofy(100)
+
+          coil.setRatedHeatingCapacity(5834)
+          coil.setRatedCOP(3.26)
+          coil.setRatedSensibleHeatRatio(0.98)
+          coil.setRatedEvaporatorInletAirDryBulbTemperature(UnitConversions.convert(47, 'F', 'C'))
+          coil.setRatedEvaporatorInletAirWetBulbTemperature(UnitConversions.convert(43, 'F', 'C'))
+          coil.setRatedCondenserInletWaterTemperature(48.89)
+          coil.setEvaporatorFanPowerIncludedinRatedCOP(true)
+          coil.setEvaporatorAirTemperatureTypeforCurveObjects('DryBulbTemperature')
+          coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
+          coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
+        end #FIXME: elsif lab data...
 
         tank = OpenStudio::Model::WaterHeaterStratified.new(model)
         tank.setName("#{name} Water Heater")
