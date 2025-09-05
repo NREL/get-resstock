@@ -64,6 +64,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     num_stories = hpxml_bldg.header.extension_properties['geometry_num_floors_above_grade'].to_f
     has_double_loaded_corridor = hpxml_bldg.header.extension_properties['geometry_corridor_position']
     cec_climate_zone = hpxml_bldg.header.extension_properties['cec_climate_zone']
+    coil_type = hpxml_bldg.header.extension_properties['coil_type']
 
     # Include Swing Tank
     include_swing_tank = false
@@ -250,12 +251,12 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Add Supply Components
     boiler_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type)
       components << component
     end
     # backup_node = nil
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type)
       components << component
     end
 

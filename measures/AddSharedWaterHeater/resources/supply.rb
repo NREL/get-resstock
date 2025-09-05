@@ -60,7 +60,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type)
     name = supply_side_loop.name
 
     if type.include?(Constant::Boiler)
@@ -87,10 +87,9 @@ class Supply
         coil = OpenStudio::Model::CoilWaterHeatingAirToWaterHeatPump.new(model)
         coil.setName("#{name} Coil")
         coil.setCrankcaseHeaterCapacity(0.0)
-        #Option 1: Copeland spec sheet
-        coil_type = 'spec' #'spec', 'lab'
-        if coil_type == 'spec'
-          # Curves
+
+        # coil_type = 'spec' # 'spec', 'lab'
+        if coil_type == 'spec' # Option 1: Copeland spec sheet
           hpwh_cap = OpenStudio::Model::CurveBiquadratic.new(model)
           hpwh_cap.setName('HPWH-Cap-fT')
           hpwh_cap.setCoefficient1Constant(2.00064)
@@ -117,6 +116,7 @@ class Supply
           hpwh_cop.setMinimumValueofy(0)
           hpwh_cop.setMaximumValueofy(100)
 
+          coil.setRatedEvaporatorAirFlowRate(0.75) # FIXME: sort of arbitarily increased from autosized value of 0.293 to get around negative coil bypass factor error.
           coil.setRatedHeatingCapacity(5834)
           coil.setRatedCOP(3.26)
           coil.setRatedSensibleHeatRatio(0.98)
@@ -127,7 +127,9 @@ class Supply
           coil.setEvaporatorAirTemperatureTypeforCurveObjects('DryBulbTemperature')
           coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
-        end #FIXME: elsif lab data...
+        elsif coil_type == 'lab' # Option 2: lab
+          # TODO
+        end
 
         tank = OpenStudio::Model::WaterHeaterStratified.new(model)
         tank.setName("#{name} Water Heater")

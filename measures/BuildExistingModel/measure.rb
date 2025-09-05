@@ -282,7 +282,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou', 'sample_weight_buildings']
+    extras -= ['coil_type']
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -385,6 +385,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
     geometry_corridor_position = bldg_data['Corridor']
     cec_climate_zone = bldg_data['CEC Climate Zone']
+    coil_type = bldg_data['coil_type']
 
     # Optional whole SFA/MF building simulation and unit multipliers
     whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
@@ -455,6 +456,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
       additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
+      additional_properties << "coil_type=#{coil_type}" # Used by AddSharedWaterHeater measure
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version
