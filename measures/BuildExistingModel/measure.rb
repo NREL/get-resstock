@@ -282,7 +282,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['coil_type', 'Description']
+    extras -= ['Coil Type', 'Description']
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -353,23 +353,34 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
+      hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
+      
       if water_heater_efficiency.include?('Natural Gas')
         shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
-        if water_heater_efficiency.include?('Natural Gas Heat Pump')
+        if water_heater_efficiency.include?('Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
+          end
         else
           shared_water_heater_type = Constant::WaterHeaterTypeBoiler
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiBoiler
+          end
         end
       elsif water_heater_efficiency.include?('Electric')
         shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
-        if water_heater_efficiency.include?('Electric Heat Pump')
+        if water_heater_efficiency.include?('Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        end
 
-          hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
-          if hvac_shared_efficiencies.include?('Heating') &&
-             water_heater_efficiency.include?('Standard')
-            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
-          end
+        if hvac_shared_efficiencies.include?('Heating') &&
+           water_heater_efficiency.include?('Combi')
+          shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
         end
       end
 
@@ -385,7 +396,8 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
     geometry_corridor_position = bldg_data['Corridor']
     cec_climate_zone = bldg_data['CEC Climate Zone']
-    coil_type = bldg_data['coil_type']
+    coil_type = bldg_data['Coil Type']
+    description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
     whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
@@ -457,6 +469,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
       additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
       additional_properties << "coil_type=#{coil_type}" # Used by AddSharedWaterHeater measure
+      register_value(runner, 'description', description)
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version

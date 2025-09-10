@@ -108,7 +108,10 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     t_cold = avg_tmains
     cumulative_hw_volume = boiler_storage_tank_volume * 0.7
     average_hw_flow = cumulative_hw_volume / 60.0
-    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+    q_hw = 0
+    if shared_boiler_efficiency_afue > 0
+      q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+    end
     boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
 
     # Pumps
@@ -329,6 +332,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('tank_capacity_swing', swing_tank_capacity)
     runner.registerValue('reconnected_water_heatings', reconnected_water_heatings)
     runner.registerValue('reconnected_space_heatings', reconnected_space_heatings)
+    runner.registerValue('coil_type', coil_type)
 
     return true
   end
