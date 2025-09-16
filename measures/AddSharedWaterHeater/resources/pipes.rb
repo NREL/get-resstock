@@ -69,14 +69,14 @@ class Pipes
     # ASHRAE calculation of the recirculation loop flow rate
     # Based on Equation 9 on p50.7 in 2011 ASHRAE Handbook--HVAC Applications
 
-    avg_num_bath = 0
-    avg_ffa = 0
+    #avg_num_bath = 0
+    #avg_ffa = 0
     len_ins = 0
     len_unins = 0
-    hpxml_buildings.each do |hpxml_bldg|
-    avg_num_bath += hpxml_bldg.building_construction.number_of_bathrooms / hpxml_buildings.size
-    avg_ffa += hpxml_bldg.building_construction.conditioned_floor_area / hpxml_buildings.size
-    end
+    #hpxml_buildings.each do |hpxml_bldg|
+    #avg_num_bath += hpxml_bldg.building_construction.number_of_bathrooms / hpxml_buildings.size
+    #avg_ffa += hpxml_bldg.building_construction.conditioned_floor_area / hpxml_buildings.size
+    #end
 
     if supply_pipe_ins_r_value > 0
       len_ins += supply_length
