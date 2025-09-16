@@ -127,7 +127,7 @@ class Supply
           coil.setEvaporatorAirTemperatureTypeforCurveObjects('DryBulbTemperature')
           coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
-          coil.setRatedEvaporatorAirFlowRate()
+          coil.setRatedEvaporatorAirFlowRate(0.18877898)
         end #FIXME: elsif lab data...
 
 
