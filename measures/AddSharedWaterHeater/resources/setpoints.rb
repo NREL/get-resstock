@@ -37,6 +37,7 @@ class Setpoints
 
   def self.get_loop_setpoints(type)
     # deg-F
+    #FIXME: read in shared_setpoint_F from the buildstock.csv and use that for all loops
     dhw_loop_sp = 130.0
     if type == Constant::WaterHeaterTypeBoiler
       boiler_loop_sp = dhw_loop_sp
