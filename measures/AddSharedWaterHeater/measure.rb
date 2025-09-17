@@ -90,11 +90,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units, include_swing_tank)
     boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type)
 
-    # Tanks
-    boiler_storage_tank_volume = Tanks.get_boiler_storage_volume(num_units, num_occs)
-    heat_pump_storage_tank_volume = Tanks.get_heat_pump_storage_volume(shared_water_heater_type, cec_climate_zone)
-    swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
-
     # Setpoints
     dhw_loop_des, boiler_loop_des, heat_pump_loop_des, storage_loop_des, space_heating_loop_des = Setpoints.get_loop_designs(shared_water_heater_type)
     dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_setpoints(shared_water_heater_type)
@@ -109,6 +104,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     average_hw_flow = cumulative_hw_volume / 60.0
     q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
     boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
+
+    # Tanks
+    boiler_storage_tank_volume = Tanks.get_boiler_storage_volume(num_units, num_occs)
+    heat_pump_storage_tank_volume = Tanks.get_heat_pump_storage_volume(shared_water_heater_type, t_cold)
+    swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Pumps
     # pump_head = Pumps.get_rated_head(shared_water_heater_type)
@@ -249,13 +249,14 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     t_amb.setKeyName('*')
 
     # Add Supply Components
+    coil_type = 'spec' # 'spec', 'lab'
     boiler_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type)
       components << component
     end
     # backup_node = nil
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units)
+      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type)
       components << component
     end
 

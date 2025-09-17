@@ -30,6 +30,13 @@ class Tanks
     end
   end
 
+  def self.min_tank_size_by_tmains(t_mains)
+    #Calc based on curve fit to CEC climate zone method
+    vol = 4.7429 * t_mains - 34.965
+    vol = [vol, 80].max #ensure reasonable minimum if super cold mains temp
+    return vol
+  end
+
   def self.get_boiler_storage_volume(num_units, num_occs)
     # gal
 
@@ -44,12 +51,12 @@ class Tanks
     return boiler_storage_tank_volume
   end
 
-  def self.get_heat_pump_storage_volume(type, cec_climate_zone)
+  def self.get_heat_pump_storage_volume(type, t_mains)
     # gal
 
     heat_pump_storage_tank_volume = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
-      heat_pump_storage_tank_volume = min_tank_size_by_cec_climate_zone(cec_climate_zone)
+      heat_pump_storage_tank_volume = min_tank_size_by_tmains(t_mains)
     end
 
     return heat_pump_storage_tank_volume
