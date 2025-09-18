@@ -35,10 +35,8 @@ class Setpoints
     return dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp
   end
 
-  def self.get_loop_setpoints(type)
+  def self.get_loop_setpoints(type, dhw_loop_sp)
     # deg-F
-    #FIXME: read in shared_setpoint_F from the buildstock.csv and use that for all loops
-    dhw_loop_sp = 130.0
     if type == Constant::WaterHeaterTypeBoiler
       boiler_loop_sp = dhw_loop_sp
       heat_pump_loop_sp = nil
@@ -67,7 +65,7 @@ class Setpoints
       space_heating_loop_sp = space_heat_sp
     end
 
-    return dhw_loop_sp, boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp
+    return boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp
   end
 
   def self.create_schedule(model, sp)

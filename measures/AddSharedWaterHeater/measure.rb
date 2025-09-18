@@ -64,6 +64,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     num_stories = hpxml_bldg.header.extension_properties['geometry_num_floors_above_grade'].to_f
     has_double_loaded_corridor = hpxml_bldg.header.extension_properties['geometry_corridor_position']
     cec_climate_zone = hpxml_bldg.header.extension_properties['cec_climate_zone']
+    coil_type = hpxml_bldg.header.extension_properties['coil_type']
+    dhw_loop_sp = hpxml_bldg.header.extension_properties['dhw_loop_sp'].to_f
+    space_htg_load_frac = hpxml_bldg.header.extension_properties['space_htg_load_frac'].to_f
 
     # Include Swing Tank
     include_swing_tank = false
@@ -88,9 +91,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     num_occs = hpxml_bldgs.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_occupancy.number_of_residents }.sum
 
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units, include_swing_tank)
-    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type)
+    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, space_htg_load_frac)
 
-    #Mains Temp
+    # Mains Temp
     site_water_mains_temperature = model.getSiteWaterMainsTemperature
     temperature_schedule = site_water_mains_temperature.temperatureSchedule.get
     avg_tmains = UnitConversions.convert(temperature_schedule.to_ScheduleInterval.get.timeSeries.averageValue, 'C', 'F')
@@ -101,11 +104,18 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     heat_pump_storage_tank_volume = Tanks.get_heat_pump_storage_volume(shared_water_heater_type, avg_tmains)
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
+    # Setpoints
+    dhw_loop_des, boiler_loop_des, heat_pump_loop_des, storage_loop_des, space_heating_loop_des = Setpoints.get_loop_designs(shared_water_heater_type)
+    boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_setpoints(shared_water_heater_type, dhw_loop_sp)
+
     # Water heating rate = m_dot * cp * deltaT / efficiency (to be compared with burner capacity later)
     t_hot = boiler_loop_sp
     cumulative_hw_volume = boiler_storage_tank_volume * 0.7
     average_hw_flow = cumulative_hw_volume / 60.0
-    q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+    q_hw = 0
+    if shared_boiler_efficiency_afue > 0
+      q_hw = average_hw_flow * 60.0 * 8.4 * (t_hot - t_cold) / shared_boiler_efficiency_afue
+    end
     boiler_capacity = q_hw # FIXME: set this? looks to be about half our current approach
 
     # Pumps
@@ -247,7 +257,6 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     t_amb.setKeyName('*')
 
     # Add Supply Components
-    #coil_type = 'spec' # 'spec', 'lab'
     boiler_loops.each do |supply_loop, components|
       component = Supply.create_component(model, Constant::Boiler, shared_water_heater_fuel_type, supply_loop, boiler_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type)
       components << component
@@ -327,6 +336,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('tank_capacity_swing', swing_tank_capacity)
     runner.registerValue('reconnected_water_heatings', reconnected_water_heatings)
     runner.registerValue('reconnected_space_heatings', reconnected_space_heatings)
+    runner.registerValue('coil_type', coil_type)
+    runner.registerValue('space_htg_load_frac', space_htg_load_frac)
 
     return true
   end

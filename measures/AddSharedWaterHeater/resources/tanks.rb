@@ -31,9 +31,9 @@ class Tanks
   end
 
   def self.min_tank_size_by_tmains(t_mains)
-    #Calc based on curve fit to CEC climate zone method
+    # Calc based on curve fit to CEC climate zone method
     vol = 4.7429 * t_mains - 34.965
-    vol = [vol, 80].max #ensure reasonable minimum if super cold mains temp
+    vol = [vol, 80].max # ensure reasonable minimum if super cold mains temp
     return vol
   end
 

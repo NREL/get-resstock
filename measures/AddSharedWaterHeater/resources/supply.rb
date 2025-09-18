@@ -42,10 +42,20 @@ class Supply
     return total_space_heating_capacity
   end
 
-  def self.get_supply_capacities(model, type)
+  def self.get_supply_capacities(model, type, space_htg_load_frac)
     # W
-    water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 # FIXME
-    space_heating_capacity = get_total_space_heating_capacity(model) * 0.6 # FIXME
+    # FIXME: need guidance here.
+    # Base building
+    # - Boiler used for WH only: ?
+    # - Boiler used for WH + SH: ?
+    # Retrofit building
+    # - Boiler used for WH only: ?
+    # - Boiler used for WH + SH: ?
+    # - HPWH used for WH only: ?
+    # - HPWH used for WH + SH: ?
+
+    water_heating_capacity = get_total_water_heating_capacity(model) * space_htg_load_frac
+    space_heating_capacity = get_total_space_heating_capacity(model) * space_htg_load_frac
 
     boiler_capacity = water_heating_capacity
     if type.include?(Constant::SpaceHeating)
@@ -54,7 +64,7 @@ class Supply
 
     heat_pump_capacity = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
-      heat_pump_capacity = 36194.0
+      heat_pump_capacity += water_heating_capacity
     end
 
     return boiler_capacity, heat_pump_capacity
@@ -117,7 +127,8 @@ class Supply
           hpwh_cop.setMaximumValueofy(100)
 
           coil.setRatedEvaporatorAirFlowRate(0.75) # FIXME: sort of arbitarily increased from autosized value of 0.293 to get around negative coil bypass factor error.
-          coil.setRatedHeatingCapacity(5834)
+          # coil.setRatedHeatingCapacity(5834)
+          coil.setRatedHeatingCapacity(capacity) # FIXME
           coil.setRatedCOP(3.26)
           coil.setRatedSensibleHeatRatio(0.98)
           coil.setRatedEvaporatorInletAirDryBulbTemperature(UnitConversions.convert(47, 'F', 'C'))
@@ -128,8 +139,9 @@ class Supply
           coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
           coil.setRatedEvaporatorAirFlowRate(0.18877898)
-        end #FIXME: elsif lab data...
-
+        elsif coil_type == 'lab' # Option 2: lab
+          # FIXME: elsif lab data...
+        end
 
         tank = OpenStudio::Model::WaterHeaterStratified.new(model)
         tank.setName("#{name} Water Heater")

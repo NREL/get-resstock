@@ -282,7 +282,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou', 'sample_weight_buildings']
+    extras -= ['Coil Type', 'Loops Setpoint', 'HPWH Fraction of Space Heating Load', 'Description']
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -353,23 +353,34 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
+      hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
+
       if water_heater_efficiency.include?('Natural Gas')
         shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
-        if water_heater_efficiency.include?('Natural Gas Heat Pump')
+        if water_heater_efficiency.include?('Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
+          end
         else
           shared_water_heater_type = Constant::WaterHeaterTypeBoiler
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiBoiler
+          end
         end
       elsif water_heater_efficiency.include?('Electric')
         shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
-        if water_heater_efficiency.include?('Electric Heat Pump')
+        if water_heater_efficiency.include?('Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        end
 
-          hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
-          if hvac_shared_efficiencies.include?('Heating') &&
-             water_heater_efficiency.include?('Standard')
-            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
-          end
+        if hvac_shared_efficiencies.include?('Heating') &&
+           water_heater_efficiency.include?('Combi')
+          shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
         end
       end
 
@@ -385,6 +396,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
     geometry_corridor_position = bldg_data['Corridor']
     cec_climate_zone = bldg_data['CEC Climate Zone']
+    coil_type = bldg_data['Coil Type']
+    dhw_loop_sp = bldg_data['Loops Setpoint']
+    space_htg_load_frac = bldg_data['HPWH Fraction of Space Heating Load']
+    description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
     whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
@@ -455,6 +470,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
       additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
+      additional_properties << "coil_type=#{coil_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "dhw_loop_sp=#{dhw_loop_sp}" # Used by AddSharedWaterHeater measure
+      additional_properties << "space_htg_load_frac=#{space_htg_load_frac}" # Used by AddSharedWaterHeater measure
+      register_value(runner, 'description', description) unless description.nil?
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version
