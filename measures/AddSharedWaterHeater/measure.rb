@@ -90,8 +90,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     num_beds = hpxml_bldgs.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_construction.number_of_bedrooms }.sum
     num_occs = hpxml_bldgs.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_occupancy.number_of_residents }.sum
 
-    boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units, include_swing_tank)
-    boiler_capacity, heat_pump_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, space_htg_load_frac)
+
+    boiler_capacity, heat_pump_capacity, space_heating_hp_count = Supply.get_supply_capacities(model, shared_water_heater_type, space_htg_load_frac, coil_type)    
+    boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units, include_swing_tank, space_heating_hp_count)
 
     # Mains Temp
     site_water_mains_temperature = model.getSiteWaterMainsTemperature

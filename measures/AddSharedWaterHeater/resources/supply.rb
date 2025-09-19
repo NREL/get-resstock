@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_counts(type, _num_beds, num_units, include_swing_tank)
+  def self.get_supply_counts(type, _num_beds, num_units, include_swing_tank, space_heating_hp_count)
     boiler_count = 0
     if not include_swing_tank
       boiler_count = 1
@@ -17,7 +17,7 @@ class Supply
       heat_pump_count = [(num_units / 20.0).ceil, 5].min
 
       if type.include?(Constant::SpaceHeating)
-        # heat_pump_count += 0 # FIXME
+        heat_pump_count += space_heating_hp_count
       end
     end
 
@@ -42,7 +42,7 @@ class Supply
     return total_space_heating_capacity
   end
 
-  def self.get_supply_capacities(model, type, space_htg_load_frac)
+  def self.get_supply_capacities(model, type, space_htg_load_frac, coil_type)
     # W
     # FIXME: need guidance here.
     # Base building
@@ -54,8 +54,9 @@ class Supply
     # - HPWH used for WH only: ?
     # - HPWH used for WH + SH: ?
 
-    water_heating_capacity = get_total_water_heating_capacity(model) * space_htg_load_frac
-    space_heating_capacity = get_total_space_heating_capacity(model) * space_htg_load_frac
+    water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 #To account for approximate coincidence factor
+    space_heating_capacity = get_total_space_heating_capacity(model) #Retain full capacity for boiler sizing
+    space_heating_capacity_for_hp = space_heating_capacity * space_htg_load_frac #portion of space heating load served by HPWH
 
     boiler_capacity = water_heating_capacity
     if type.include?(Constant::SpaceHeating)
@@ -64,10 +65,16 @@ class Supply
 
     heat_pump_capacity = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
-      heat_pump_capacity += water_heating_capacity
+      if coil_type == 'spec'
+        heat_pump_capacity = 20250.0 #Nominal capacity at 40F for Copeland from spec sheet
+      elsif coil_type == 'lab'
+        heat_pump_capacity = 20250.0 #FIXME: Real number from lab testing at ~40 F
+      end
     end
 
-    return boiler_capacity, heat_pump_capacity
+    space_heating_hp_count = (space_heating_capacity_for_hp / heat_pump_capacity).ceil
+
+    return boiler_capacity, heat_pump_capacity, space_heating_hp_count
   end
 
   def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type)
