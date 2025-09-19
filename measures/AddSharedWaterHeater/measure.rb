@@ -90,9 +90,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     num_beds = hpxml_bldgs.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_construction.number_of_bedrooms }.sum
     num_occs = hpxml_bldgs.collect { |hpxml_bldg| hpxml_bldg.building_construction.number_of_units * hpxml_bldg.building_occupancy.number_of_residents }.sum
 
+    # Capacities
+    boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, shared_water_heater_fuel_type, coil_type)
 
-    boiler_capacity, heat_pump_capacity, space_heating_hp_count = Supply.get_supply_capacities(model, shared_water_heater_type, space_htg_load_frac, coil_type)    
-    boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, num_beds, num_units, include_swing_tank, space_heating_hp_count)
+    # Counts
+    boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, shared_water_heater_fuel_type, num_units, include_swing_tank, water_heating_capacity, space_heating_capacity, space_htg_load_frac, heat_pump_capacity)
 
     # Mains Temp
     site_water_mains_temperature = model.getSiteWaterMainsTemperature
@@ -315,6 +317,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('boiler_capacity_w', boiler_capacity)
     runner.registerValue('boiler_capacity_q_hw_w', q_hw)
     runner.registerValue('heat_pump_count', heat_pump_count)
+    runner.registerValue('heat_pump_capacity', heat_pump_capacity)
     runner.registerValue('length_ft_supply', supply_length)
     runner.registerValue('length_ft_return', return_length)
     runner.registerValue('loop_gpm_supply', supply_loop_gpm) if !supply_loop_gpm.nil?
@@ -339,6 +342,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     runner.registerValue('reconnected_space_heatings', reconnected_space_heatings)
     runner.registerValue('coil_type', coil_type)
     runner.registerValue('space_htg_load_frac', space_htg_load_frac)
+    runner.registerValue('water_heating_capacity', water_heating_capacity)
+    runner.registerValue('space_heating_capacity', space_heating_capacity)
 
     return true
   end

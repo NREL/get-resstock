@@ -1,23 +1,28 @@
 # frozen_string_literal: true
 
 class Supply
-  def self.get_supply_counts(type, _num_beds, num_units, include_swing_tank, space_heating_hp_count)
+  def self.get_supply_counts(type, fuel_type, num_units, include_swing_tank, water_heating_capacity, space_heating_capacity, space_htg_load_frac, heat_pump_capacity)
     boiler_count = 0
     if not include_swing_tank
       boiler_count = 1
     end
+
     heat_pump_count = 0
+    if heat_pump_capacity > 0
+      if fuel_type == HPXML::FuelTypeElectricity
+        space_heating_capacity_for_hp = 0.0
+        if type.include?(Constant::SpaceHeating)
+          space_heating_capacity_for_hp = space_heating_capacity * space_htg_load_frac # Portion of space heating load served by HPWH
+        end
 
-    if type.include?(Constant::HeatPumpWaterHeater)
-      # Calculate some size parameters: number of heat pumps, storage tank volume, number of tanks, swing tank volume
-      # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
-      # FIXME: How to adjust size when used for space heating?
-      # heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
-      # heat_pump_count = [1, heat_pump_count].max # FIXME: min
-      heat_pump_count = [(num_units / 20.0).ceil, 5].min
-
-      if type.include?(Constant::SpaceHeating)
-        heat_pump_count += space_heating_hp_count
+        heat_pump_count = ((water_heating_capacity + space_heating_capacity_for_hp) / heat_pump_capacity).ceil
+      else
+        # Calculate some size parameters: number of heat pumps, storage tank volume, number of tanks, swing tank volume
+        # Sizing is based on CA code requirements: https://efiling.energy.ca.gov/GetDocument.aspx?tn=234434&DocumentContentId=67301
+        # FIXME: How to adjust size when used for space heating?
+        # heat_pump_count = ((0.037 * num_beds + 0.106 * num_units) * (154.0 / 123.5)).ceil # ratio is assumed capacity from code / nominal capacity from Robur spec sheet
+        # heat_pump_count = [1, heat_pump_count].max # FIXME: min
+        heat_pump_count = [(num_units / 20.0).ceil, 5].min
       end
     end
 
@@ -42,21 +47,10 @@ class Supply
     return total_space_heating_capacity
   end
 
-  def self.get_supply_capacities(model, type, space_htg_load_frac, coil_type)
+  def self.get_supply_capacities(model, type, fuel_type, coil_type)
     # W
-    # FIXME: need guidance here.
-    # Base building
-    # - Boiler used for WH only: ?
-    # - Boiler used for WH + SH: ?
-    # Retrofit building
-    # - Boiler used for WH only: ?
-    # - Boiler used for WH + SH: ?
-    # - HPWH used for WH only: ?
-    # - HPWH used for WH + SH: ?
-
-    water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 #To account for approximate coincidence factor
-    space_heating_capacity = get_total_space_heating_capacity(model) #Retain full capacity for boiler sizing
-    space_heating_capacity_for_hp = space_heating_capacity * space_htg_load_frac #portion of space heating load served by HPWH
+    water_heating_capacity = get_total_water_heating_capacity(model) * 0.6 # To account for approximate coincidence factor
+    space_heating_capacity = get_total_space_heating_capacity(model) # Retain full capacity for boiler sizing
 
     boiler_capacity = water_heating_capacity
     if type.include?(Constant::SpaceHeating)
@@ -65,16 +59,18 @@ class Supply
 
     heat_pump_capacity = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
-      if coil_type == 'spec'
-        heat_pump_capacity = 20250.0 #Nominal capacity at 40F for Copeland from spec sheet
-      elsif coil_type == 'lab'
-        heat_pump_capacity = 20250.0 #FIXME: Real number from lab testing at ~40 F
+      if fuel_type == HPXML::FuelTypeElectricity
+        if coil_type == 'spec'
+          heat_pump_capacity = 20250.0 # Nominal capacity at 40F for Copeland from spec sheet
+        elsif coil_type == 'lab'
+          heat_pump_capacity = 20250.0 # FIXME: Real number from lab testing at ~40 F
+        end
+      else
+        heat_pump_capacity = 36194.0
       end
     end
 
-    space_heating_hp_count = (space_heating_capacity_for_hp / heat_pump_capacity).ceil
-
-    return boiler_capacity, heat_pump_capacity, space_heating_hp_count
+    return boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity
   end
 
   def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type)
