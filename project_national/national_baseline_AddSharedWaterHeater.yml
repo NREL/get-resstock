@@ -59,8 +59,8 @@ workflow_generator:
       output_variables:
         - name: Boiler NaturalGas Energy # 1a
         - name: Boiler Heating Energy # 1b
-        # - name: Fuel-fired Absorption HeatPump Fuel Energy # 2a
-        # - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy # 2b
+        - name: Fuel-fired Absorption HeatPump Fuel Energy # 2a
+        - name: Fuel-fired Absorption HeatPump Load Side Heat Transfer Energy # 2b
         - name: Water Heater Electricity Energy
         - name: Water Heater Heating Energy
         - name: Boiler Inlet Temperature
@@ -88,10 +88,10 @@ workflow_generator:
         # - name: Fluid Heat Exchanger Loop Supply Side Outlet Temperature
         # - name: Fluid Heat Exchanger Loop Demand Side Inlet Temperature
         # - name: Fluid Heat Exchanger Loop Demand Side Outlet Temperature
-        - name: Water Heater Source Side Inlet Temperature
-        - name: Water Heater Source Side Outlet Temperature
-        - name: Water Heater Use Side Inlet Temperature
-        - name: Water Heater Use Side Outlet Temperature
+        # - name: Water Heater Source Side Inlet Temperature
+        # - name: Water Heater Source Side Outlet Temperature
+        # - name: Water Heater Use Side Inlet Temperature
+        # - name: Water Heater Use Side Outlet Temperature
         # - name: Pump Fluid Heat Gain Rate
         # - name: Pump Fluid Heat Gain Energy
         # - name: Water Heater Heat Loss Rate

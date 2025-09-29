@@ -232,7 +232,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     if heat_pump_loops.empty? # we only have HP loops when HP is gas-fired
       (1..heat_pump_count).to_a.each do |_i|
-        component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, storage_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, prev_component)
+        component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, storage_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, prev_component, heat_pump_loop_sp)
         prev_component = component
       end
     end
@@ -269,7 +269,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, nil)
+      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, heat_pump_loop_sp, nil)
       components << component
     end
 

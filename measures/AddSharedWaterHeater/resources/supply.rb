@@ -73,7 +73,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, setpoint = nil, hp_in_series = true, boiler_on_hp_outlet = true)
     name = supply_side_loop.name
 
     if type.include?(Constant::Boiler)
@@ -146,25 +146,23 @@ class Supply
           # FIXME: elsif lab data...
         end
 
-        tank = OpenStudio::Model::WaterHeaterStratified.new(model)
-        tank.setName("#{name} Water Heater")
+        volume = 100.0 # FIXME
+        if type.include?(Constant::SpaceHeating)
+          volume *= 1.5 # Avoid "Change over rate is too fast" FIXME
+        end
+        tank = Tanks.get_storage_tank(model, "#{name} Storage Tank", setpoint, fuel_type, volume)
 
         fan = OpenStudio::Model::FanOnOff.new(model)
         fan.setName("#{name} Fan")
 
         compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
-        compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 60.0)
+        compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), setpoint)
+
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
 
         component = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
         component = component.tank.to_WaterHeaterStratified.get # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
-
-        component.setTankHeight(2.0)
-        component.setTankVolume(UnitConversions.convert(200.0, 'gal', 'm^3')) # FIXME
-        if type.include?(Constant::SpaceHeating)
-          component.setTankVolume(component.tankVolume.get * 1.5) # Avoid "Change over rate is too fast" FIXME
-        end
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName("#{name} Water Heater")
