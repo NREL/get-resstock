@@ -1,6 +1,26 @@
 # frozen_string_literal: true
 
 class Loops
+  def self.add_component(component, prev_component, hp_in_series, boiler_on_hp_outlet, supply_side_loop, demand_side_loop)
+    if prev_component.nil? || !hp_in_series
+      supply_side_loop.addSupplyBranchForComponent(component) # first one is a new supply branch
+    else
+      if boiler_on_hp_outlet
+        # remaining are added in series
+        if prev_component.is_a?(OpenStudio::Model::WaterHeaterStratified)
+          component.addToNode(prev_component.useSideOutletModelObject.get.to_Node.get)
+        elsif prev_component.is_a?(OpenStudio::Model::HeatExchangerFluidToFluid)
+          component.addToNode(prev_component.supplyOutletModelObject.get.to_Node.get)
+        end
+      else
+        component.addToNode(supply_side_loop.supplyOutletNode)
+      end
+    end
+    if !demand_side_loop.nil?
+      demand_side_loop.addDemandBranchForComponent(component)
+    end
+  end
+
   def self.create_plant(model, name, design_temp, deltaF, max_gpm = nil, num_units = nil)
     loop = OpenStudio::Model::PlantLoop.new(model)
     loop.setName(name)

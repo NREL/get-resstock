@@ -82,7 +82,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_tank_or_hx, name, _fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_component, name, _fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -144,32 +144,16 @@ class Tanks
     storage_tank.setAdditionalDestratificationConductivity(0) # FIXME: apply_solar_thermal
     storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # storage_tank.setSourceSideDesignFlowRate(UnitConversions.convert(13.6, 'gal/min', 'm^3/s')) # FIXME
-    if demand_side_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
-      storage_tank.setHeaterThermalEfficiency(1.0)
-      storage_tank.setAdditionalDestratificationConductivity(0)
-      storage_tank.setSourceSideDesignFlowRate(0)
-      storage_tank.setSourceSideFlowControlMode('')
-      storage_tank.setSourceSideInletHeight(0)
-      storage_tank.setSourceSideOutletHeight(0)
-    end
+    # if demand_side_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
+    # storage_tank.setHeaterThermalEfficiency(1.0)
+    # storage_tank.setAdditionalDestratificationConductivity(0)
+    # storage_tank.setSourceSideDesignFlowRate(0)
+    # storage_tank.setSourceSideFlowControlMode('')
+    # storage_tank.setSourceSideInletHeight(0)
+    # storage_tank.setSourceSideOutletHeight(0)
+    # end
 
-    if prev_tank_or_hx.nil? || !hp_in_series
-      supply_side_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
-    else
-      if boiler_on_hp_outlet
-        # remaining are added in series
-        if prev_tank_or_hx.is_a?(OpenStudio::Model::WaterHeaterStratified)
-          storage_tank.addToNode(prev_tank_or_hx.useSideOutletModelObject.get.to_Node.get)
-        elsif prev_tank_or_hx.is_a?(OpenStudio::Model::HeatExchangerFluidToFluid)
-          storage_tank.addToNode(prev_tank_or_hx.supplyOutletModelObject.get.to_Node.get)
-        end
-      else
-        storage_tank.addToNode(supply_side_loop.supplyOutletNode)
-      end
-    end
-    if !supply_side_loop.nil?
-      demand_side_loop.addDemandBranchForComponent(storage_tank)
-    end
+    Loops.add_component(storage_tank, prev_component, hp_in_series, boiler_on_hp_outlet, supply_side_loop, demand_side_loop)
 
     return storage_tank
   end

@@ -73,7 +73,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, hp_in_series = true, boiler_on_hp_outlet = true)
     name = supply_side_loop.name
 
     if type.include?(Constant::Boiler)
@@ -202,7 +202,8 @@ class Supply
         Curves.set_heat_pump_air_to_water_fuel_fired_heating_curves(component, cap_func_temp, eir_func_temp, eir_func_plr, eir_defrost_adj, cycling_ratio_factor, aux_eir_func_temp, aux_eir_func_plr)
       end
     end
-    supply_side_loop.addSupplyBranchForComponent(component)
+
+    Loops.add_component(component, prev_component, hp_in_series, boiler_on_hp_outlet, supply_side_loop, nil)
 
     return component
   end
