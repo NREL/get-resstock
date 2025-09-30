@@ -2737,6 +2737,9 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
           return { [FT::Elec, EUT::HotWater] => ["Pump #{EPlus::FuelTypeElectricity} Energy"] }
         end
 
+      elsif object.to_WaterHeaterHeatPump.is_initialized
+        return { [FT::Elec, EUT::HotWater] => ["Water Heater Off Cycle Ancillary #{EPlus::FuelTypeElectricity} Energy", "Water Heater On Cycle Ancillary #{EPlus::FuelTypeElectricity} Energy"] }
+
       elsif object.to_WaterHeaterMixed.is_initialized
         fuel = object.to_WaterHeaterMixed.get.heaterFuelType
         return { [to_ft[fuel], EUT::HotWater] => ["Water Heater #{fuel} Energy", "Water Heater Off Cycle Parasitic #{EPlus::FuelTypeElectricity} Energy", "Water Heater On Cycle Parasitic #{EPlus::FuelTypeElectricity} Energy"] }
