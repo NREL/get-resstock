@@ -7,7 +7,9 @@ class Loops
     else
       if boiler_on_hp_outlet
         # remaining are added in series
-        if prev_component.is_a?(OpenStudio::Model::WaterHeaterStratified)
+        if prev_component.is_a?(OpenStudio::Model::WaterHeaterMixed)
+          component.addToNode(prev_component.useSideOutletModelObject.get.to_Node.get)
+        elsif prev_component.is_a?(OpenStudio::Model::WaterHeaterStratified)
           component.addToNode(prev_component.useSideOutletModelObject.get.to_Node.get)
         elsif prev_component.is_a?(OpenStudio::Model::HeatExchangerFluidToFluid)
           component.addToNode(prev_component.supplyOutletModelObject.get.to_Node.get)

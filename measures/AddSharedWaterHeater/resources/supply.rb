@@ -154,6 +154,7 @@ class Supply
 
         fan = OpenStudio::Model::FanOnOff.new(model)
         fan.setName("#{name} Fan")
+        fan.additionalProperties.setFeature('ObjectType', Constants.ObjectNameWaterHeater) # Used by reporting measure
 
         compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), setpoint)
@@ -161,8 +162,23 @@ class Supply
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
 
-        component = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
-        component = component.tank.to_WaterHeaterStratified.get # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
+        hpwh = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
+        hpwh.setInletAirConfiguration('OutdoorAirOnly')
+        hpwh.setCompressorLocation('Outdoors')
+
+        # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
+        # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
+        # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)
+
+        # inletAirHumiditySchedule = OpenStudio::Model::ScheduleRuleset.new(model)
+        # inletAirHumiditySchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.5)
+        # hpwh.setInletAirHumiditySchedule(inletAirHumiditySchedule)
+
+        # compressorAmbientTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
+        # compressorAmbientTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 21.0)
+        # hpwh.setCompressorAmbientTemperatureSchedule(compressorAmbientTemperatureSchedule)
+
+        component = hpwh.tank.to_WaterHeaterStratified.get # the stratified tank goes on the supply side of the supply loop; the pumped condenser doesn't get attached/added anywhere (?)
       else
         component = OpenStudio::Model::HeatPumpAirToWaterFuelFiredHeating.new(model)
         component.setName("#{name} Water Heater")
