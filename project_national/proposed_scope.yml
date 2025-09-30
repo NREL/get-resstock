@@ -65,8 +65,8 @@ workflow_generator:
         # - name: Water Heater Heating Energy
         - name: Cooling Coil Water Heating Electricity Energy
         - name: Cooling Coil Total Water Heating Energy
-        - name: Boiler Inlet Temperature
-        - name: Boiler Outlet Temperature
+        # - name: Boiler Inlet Temperature
+        # - name: Boiler Outlet Temperature
         # - name: Fuel-fired Absorption HeatPump Inlet Temperature
         # - name: Fuel-fired Absorption HeatPump Outlet Temperature
         - name: Water Heater Tank Temperature

@@ -269,7 +269,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     end
 
     heat_pump_loops.each do |supply_loop, components|
-      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, heat_pump_loop_sp, nil)
+      component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, supply_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, nil)
       components << component
     end
 
