@@ -140,7 +140,9 @@ class Tanks
 
     storage_tank.setOffCycleParasiticFuelConsumptionRate(0.0)
     storage_tank.setOnCycleParasiticFuelConsumptionRate(0.0)
-    storage_tank.setNumberofNodes(8) # FIXME: apply_solar_thermal
+    storage_tank.setNumberofNodes(12) # FIXME: apply_solar_thermal
+    storage_tank.setNode1AdditionalLossCoefficient(0.0) #These don't default to 0, I guess assuming a 6 node tank?
+    storage_tank.setNode6AdditionalLossCoefficient(0.0)
     storage_tank.setAdditionalDestratificationConductivity(0) # FIXME: apply_solar_thermal
     storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # storage_tank.setSourceSideDesignFlowRate(UnitConversions.convert(13.6, 'gal/min', 'm^3/s')) # FIXME
