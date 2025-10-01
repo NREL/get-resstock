@@ -142,6 +142,7 @@ class Supply
           coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
           coil.setRatedEvaporatorAirFlowRate(0.18877898)
+
         elsif coil_type == 'lab' # Option 2: lab
           # FIXME: elsif lab data...
         end
@@ -165,6 +166,8 @@ class Supply
         hpwh = OpenStudio::Model::WaterHeaterHeatPump.new(model, coil, tank, fan, compressorSetpointTemperatureSchedule, inletAirMixerSchedule)
         hpwh.setInletAirConfiguration('OutdoorAirOnly')
         hpwh.setCompressorLocation('Outdoors')
+        hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
+        hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
 
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
