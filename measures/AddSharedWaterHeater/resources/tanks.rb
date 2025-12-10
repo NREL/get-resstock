@@ -147,6 +147,9 @@ class Tanks
     storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # storage_tank.setSourceSideDesignFlowRate(UnitConversions.convert(13.6, 'gal/min', 'm^3/s')) # FIXME
 
+    # storage_tank.setSourceSideFlowControlMode('IndirectHeatAlternateSetpoint')
+    # storage_tank.setIndirectAlternateSetpointTemperatureSchedule(setpoint_schedule)
+
     return storage_tank
   end
 

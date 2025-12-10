@@ -157,8 +157,9 @@ class Supply
         fan.setName("#{name} Fan")
         fan.additionalProperties.setFeature('ObjectType', Constants.ObjectNameWaterHeater) # Used by reporting measure
 
-        compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
-        compressorSetpointTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), setpoint)
+        compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleConstant.new(model)
+        compressorSetpointTemperatureSchedule.setName("Compressor Temperature #{setpoint.round}F")
+        compressorSetpointTemperatureSchedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
 
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
