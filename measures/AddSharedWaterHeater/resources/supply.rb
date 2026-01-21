@@ -15,6 +15,11 @@ class Supply
           space_heating_capacity_for_hp = space_heating_capacity * space_htg_load_frac # Portion of space heating load served by HPWH
         end
 
+        #puts("Water Heating Capacity: #{water_heating_capacity}")
+        #puts("Space Heating Capacity for HP: #{space_heating_capacity_for_hp}")
+        #puts("Heat Pump Capacity: #{heat_pump_capacity}")
+        #puts("space_htg_load_frac: #{space_htg_load_frac}")
+
         heat_pump_count = ((water_heating_capacity + space_heating_capacity_for_hp) / heat_pump_capacity).ceil
       else
         # Calculate some size parameters: number of heat pumps, storage tank volume, number of tanks, swing tank volume
@@ -24,6 +29,7 @@ class Supply
         # heat_pump_count = [1, heat_pump_count].max # FIXME: min
         heat_pump_count = [(num_units / 20.0).ceil, 5].min
       end
+      #puts("heat_pump_count: #{heat_pump_count}")
     end
 
     return boiler_count, heat_pump_count
@@ -142,15 +148,16 @@ class Supply
           coil.setHeatingCapacityFunctionofTemperatureCurve(hpwh_cap)
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
           coil.setRatedEvaporatorAirFlowRate(0.18877898)
+          coil.setFractionofCondenserPumpHeattoWater(0.00001)
 
         elsif coil_type == 'lab' # Option 2: lab
           # FIXME: elsif lab data...
         end
 
-        volume = 100.0 # FIXME
-        if type.include?(Constant::SpaceHeating)
-          volume *= 1.5 # Avoid "Change over rate is too fast" FIXME
-        end
+        volume = 200.0 # largest tank volume residential rated, a commercial rated tank adds substantial cost
+        #if type.include?(Constant::SpaceHeating)
+        #  volume *= 1.5 # Avoid "Change over rate is too fast" FIXME
+        #end
         tank = Tanks.get_storage_tank(model, "#{name} Storage Tank", setpoint, fuel_type, volume)
 
         fan = OpenStudio::Model::FanOnOff.new(model)
@@ -159,7 +166,8 @@ class Supply
 
         compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleConstant.new(model)
         compressorSetpointTemperatureSchedule.setName("Compressor Temperature #{setpoint.round}F")
-        compressorSetpointTemperatureSchedule.setValue(UnitConversions.convert(setpoint, 'F', 'C'))
+        comp_setpoint = setpoint + 1
+        compressorSetpointTemperatureSchedule.setValue(UnitConversions.convert(comp_setpoint, 'F', 'C'))
 
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         inletAirMixerSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 0.2)
@@ -169,7 +177,7 @@ class Supply
         hpwh.setCompressorLocation('Outdoors')
         hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
         hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
-
+        hpwh.setDeadBandTemperatureDifference(0.1) #C
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
         # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)
