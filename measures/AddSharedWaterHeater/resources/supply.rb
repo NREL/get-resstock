@@ -79,7 +79,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, setpoint = nil, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, setpoint = nil, hp_in_series = true, boiler_on_hp_outlet = true, tank = nil)
     name = supply_side_loop.name
 
     if type.include?(Constant::Boiler)
@@ -153,12 +153,6 @@ class Supply
         elsif coil_type == 'lab' # Option 2: lab
           # FIXME: elsif lab data...
         end
-
-        volume = 200.0 # largest tank volume residential rated, a commercial rated tank adds substantial cost
-        #if type.include?(Constant::SpaceHeating)
-        #  volume *= 1.5 # Avoid "Change over rate is too fast" FIXME
-        #end
-        tank = Tanks.get_storage_tank(model, "#{name} Storage Tank", setpoint, fuel_type, volume)
 
         fan = OpenStudio::Model::FanOnOff.new(model)
         fan.setName("#{name} Fan")

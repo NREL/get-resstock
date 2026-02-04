@@ -67,6 +67,14 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     coil_type = hpxml_bldg.header.extension_properties['coil_type']
     dhw_loop_sp = hpxml_bldg.header.extension_properties['dhw_loop_sp'].to_f
     space_htg_load_frac = hpxml_bldg.header.extension_properties['space_htg_load_frac'].to_f
+    hpwh_capacity = hpxml_bldg.header.extension_properties['hpwh_capacity']
+    hpwh_capacity = hpwh_capacity.to_f unless hpwh_capacity.nil?
+    hpwh_count = hpxml_bldg.header.extension_properties['hpwh_count']
+    hpwh_count = hpwh_count.to_i unless hpwh_count.nil?
+    hpwh_tank_volume = hpxml_bldg.header.extension_properties['hpwh_tank_volume']
+    hpwh_tank_volume = hpwh_tank_volume.to_f unless hpwh_tank_volume.nil?
+    boiler_tank_volume = hpxml_bldg.header.extension_properties['boiler_tank_volume']
+    boiler_tank_volume = boiler_tank_volume.to_f unless boiler_tank_volume.nil?
 
     # Include Swing Tank
     include_swing_tank = false
@@ -92,9 +100,11 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Capacities
     boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity = Supply.get_supply_capacities(model, shared_water_heater_type, shared_water_heater_fuel_type, coil_type)
+    heat_pump_capacity = hpwh_capacity unless hpwh_capacity.nil?
 
     # Counts
     boiler_count, heat_pump_count = Supply.get_supply_counts(shared_water_heater_type, shared_water_heater_fuel_type, num_units, include_swing_tank, water_heating_capacity, space_heating_capacity, space_htg_load_frac, heat_pump_capacity)
+    heat_pump_count = hpwh_count unless hpwh_count.nil?
 
     # Mains Temp
     site_water_mains_temperature = model.getSiteWaterMainsTemperature
@@ -104,7 +114,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     # Tanks
     boiler_storage_tank_volume = Tanks.get_boiler_storage_volume(num_units, num_occs)
+    boiler_storage_tank_volume = boiler_tank_volume unless boiler_tank_volume.nil?
     heat_pump_storage_tank_volume = Tanks.get_heat_pump_storage_volume(shared_water_heater_type, avg_tmains)
+    heat_pump_storage_tank_volume = hpwh_tank_volume unless hpwh_tank_volume.nil?
     swing_tank_volume = Tanks.get_swing_volume(include_swing_tank, num_units)
 
     # Setpoints
@@ -232,7 +244,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     if heat_pump_loops.empty? # we only have HP loops when HP is gas-fired
       (1..heat_pump_count).to_a.each do |_i|
-        component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, storage_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, prev_component, heat_pump_loop_sp)
+        tank = Tanks.get_storage_tank(model, "#{storage_loop.name} Storage Tank", heat_pump_loop_sp, shared_water_heater_fuel_type, heat_pump_storage_tank_volume)
+
+        component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, storage_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, prev_component, heat_pump_loop_sp, true, true, tank)
         prev_component = component
       end
     end

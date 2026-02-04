@@ -282,7 +282,15 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['Coil Type', 'Loops Setpoint', 'HPWH Fraction of Space Heating Load', 'Description']
+    extras -= ['Coil Type',
+               'Loops Setpoint',
+               'HPWH Fraction of Space Heating Load',
+               'HPWH Capacity',
+               'HPWH Count',
+               'HPWH Tank Volume',
+               'Boiler Tank Volume',
+               'Description']
+
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -399,6 +407,10 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     coil_type = bldg_data['Coil Type']
     dhw_loop_sp = bldg_data['Loops Setpoint']
     space_htg_load_frac = bldg_data['HPWH Fraction of Space Heating Load']
+    hpwh_capacity = bldg_data['HPWH Capacity']
+    hpwh_count = bldg_data['HPWH Count']
+    hpwh_tank_volume = bldg_data['HPWH Tank Volume']
+    boiler_tank_volume = bldg_data['Boiler Tank Volume']
     description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
@@ -473,6 +485,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "coil_type=#{coil_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "dhw_loop_sp=#{dhw_loop_sp}" # Used by AddSharedWaterHeater measure
       additional_properties << "space_htg_load_frac=#{space_htg_load_frac}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_capacity=#{hpwh_capacity}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_count=#{hpwh_count}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_tank_volume=#{hpwh_tank_volume}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_tank_volume=#{boiler_tank_volume}" # Used by AddSharedWaterHeater measure
+
       register_value(runner, 'description', description) unless description.nil?
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
