@@ -835,7 +835,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       # Get argument values and pass them to BuildResidentialScheduleFile
       measures['BuildResidentialScheduleFile'] = [{ 'hpxml_path' => hpxml_path,
                                                     'hpxml_output_path' => hpxml_path,
-                                                    'schedules_random_seed' => args[:building_id],
+                                                    # 'schedules_random_seed' => args[:building_id], # FIXME: comment this out so we generate the same stochastic schedules across rows of ProposedScope.csv?
                                                     'output_csv_path' => File.expand_path('../schedules.csv'),
                                                     'building_id' => 'ALL' }]
 
