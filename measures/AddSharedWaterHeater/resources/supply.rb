@@ -171,7 +171,8 @@ class Supply
         hpwh.setCompressorLocation('Outdoors')
         hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
         hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
-        hpwh.setDeadBandTemperatureDifference(0.1) #C
+        hpwh.setDeadBandTemperatureDifference(0.1) # C
+        # hpwh.setDeadBandTemperatureDifference(1.0) # C
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
         # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)
