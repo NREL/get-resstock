@@ -523,6 +523,14 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
       result << OpenStudio::IdfObject.load("Output:Variable,*,#{output_variable_name},#{args[:timeseries_frequency]};").get
     end
 
+    # Output variables
+    output_variables = ['Cooling Coil Water Heating Electricity Energy', 'Cooling Coil Total Water Heating Energy']
+    output_variables.each do |ov|
+      @model.getCoilWaterHeatingAirToWaterHeatPumps.each do |coil|
+        result << OpenStudio::IdfObject.load("Output:Variable,#{coil.name},#{ov},runperiod;").get
+      end
+    end
+
     return result.uniq
   end
 
@@ -1579,6 +1587,16 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
       results_out = Outputs.append_sizing_results(@hpxml_bldgs, results_out)
     end
 
+    # Output variables
+    results_out << [line_break]
+
+    output_variables = ['Cooling Coil Water Heating Electricity Energy', 'Cooling Coil Total Water Heating Energy']
+    output_variables.each do |ov|
+      @model.getCoilWaterHeatingAirToWaterHeatPumps.sort_by { |c| c.name.to_s }.each do |coil|
+        results_out << ["#{ov}: #{coil.name} (MBtu)", get_report_variable_data_annual([coil.name.to_s.upcase], [ov]).round(n_digits)]
+      end
+    end
+
     Outputs.write_results_out_to_file(results_out, args[:output_format], annual_output_path)
     runner.registerInfo("Wrote annual output results to #{annual_output_path}.")
 
@@ -1591,7 +1609,9 @@ class ReportSimulationOutput < OpenStudio::Measure::ReportingMeasure
 
       name = OpenStudio::toUnderscoreCase(name).chomp('_')
 
-      value /= geometry_building_num_units
+      if not output_variables.any? { |ov| name.include?(OpenStudio::toUnderscoreCase(ov).chomp('_')) }
+        value /= geometry_building_num_units
+      end
       runner.registerValue(name, value)
       runner.registerInfo("Registering #{value} for #{name}.")
     end
