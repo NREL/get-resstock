@@ -7,6 +7,7 @@ output_directory: proposed_scope
 # output_directory: proposed_scope_cap_cnt
 # output_directory: proposed_scope_cap_vol
 # output_directory: proposed_scope_cap_vol2
+# output_directory: proposed_scope_offset_vol
 weather_files_url: https://data.nrel.gov/system/files/156/Buildstock_TMY3_FIPS-1678817889.zip
 # weather_files_path: c:/OpenStudio/BuildStock_TMY3_FIPS.zip
 
@@ -18,9 +19,11 @@ weather_files_url: https://data.nrel.gov/system/files/156/Buildstock_TMY3_FIPS-1
 sampler:
   type: precomputed
   args:
-    sample_file: ProposedScope_cap_cnt.csv
+    sample_file: ProposedScope.csv
+    # sample_file: ProposedScope_cap_cnt.csv
     # sample_file: ProposedScope_cap_vol.csv
     # sample_file: ProposedScope_cap_vol2.csv
+    # sample_file: ProposedScope_offset_vol.csv
 
 workflow_generator:
   type: residential_hpxml
@@ -69,7 +72,7 @@ workflow_generator:
         # - name: Water Heater Electricity Energy
         # - name: Water Heater Heating Energy
         - name: Cooling Coil Water Heating Electricity Energy
-        # - name: Cooling Coil Total Water Heating Energy
+        - name: Cooling Coil Total Water Heating Energy
         # - name: Boiler Inlet Temperature
         # - name: Boiler Outlet Temperature
         # - name: Fuel-fired Absorption HeatPump Inlet Temperature

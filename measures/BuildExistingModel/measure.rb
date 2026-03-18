@@ -289,6 +289,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
                'HPWH Count',
                'HPWH Tank Volume',
                'Boiler Tank Volume',
+               'Boiler Loop Offset',
                'Description']
 
     if !extras.empty?
@@ -411,6 +412,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     hpwh_count = bldg_data['HPWH Count']
     hpwh_tank_volume = bldg_data['HPWH Tank Volume']
     boiler_tank_volume = bldg_data['Boiler Tank Volume']
+    boiler_loop_offset = bldg_data['Boiler Loop Offset']
     description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
@@ -489,6 +491,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "hpwh_count=#{hpwh_count}" # Used by AddSharedWaterHeater measure
       additional_properties << "hpwh_tank_volume=#{hpwh_tank_volume}" # Used by AddSharedWaterHeater measure
       additional_properties << "boiler_tank_volume=#{boiler_tank_volume}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_loop_offset=#{boiler_loop_offset}" # Used by AddSharedWaterHeater measure
 
       register_value(runner, 'description', description) unless description.nil?
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?

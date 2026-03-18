@@ -75,6 +75,8 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     hpwh_tank_volume = hpwh_tank_volume.to_f unless hpwh_tank_volume.nil?
     boiler_tank_volume = hpxml_bldg.header.extension_properties['boiler_tank_volume']
     boiler_tank_volume = boiler_tank_volume.to_f unless boiler_tank_volume.nil?
+    boiler_loop_offset = hpxml_bldg.header.extension_properties['boiler_loop_offset']
+    boiler_loop_offset = boiler_loop_offset.to_f unless boiler_loop_offset.nil?
 
     # Include Swing Tank
     include_swing_tank = false
@@ -122,6 +124,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     # Setpoints
     dhw_loop_des, boiler_loop_des, heat_pump_loop_des, storage_loop_des, space_heating_loop_des = Setpoints.get_loop_designs(shared_water_heater_type)
     boiler_loop_sp, heat_pump_loop_sp, storage_loop_sp, space_heating_loop_sp = Setpoints.get_loop_setpoints(shared_water_heater_type, dhw_loop_sp)
+    boiler_loop_sp += boiler_loop_offset
 
     # Water heating rate = m_dot * cp * deltaT / efficiency (to be compared with burner capacity later)
     t_hot = boiler_loop_sp

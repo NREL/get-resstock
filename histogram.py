@@ -6,15 +6,18 @@ import plotly.express as px
 
 # csv_file_path = 'c:/OpenStudio/get-resstock/proposed_scope_cap_cnt/results-Baseline.csv'
 # csv_file_path = 'c:/OpenStudio/get-resstock/proposed_scope_cap_vol/results-Baseline.csv'
-csv_file_path = 'c:/OpenStudio/get-resstock/proposed_scope_cap_vol2/results-Baseline.csv'
+# csv_file_path = 'c:/OpenStudio/get-resstock/proposed_scope_cap_vol2/results-Baseline.csv'
+csv_file_path = 'c:/OpenStudio/get-resstock/proposed_scope_offset_vol/results-Baseline.csv'
 
 county = 'CO, Denver County'
 # county = 'AZ, Maricopa County'
 
-xs = ['add_shared_water_heater.heat_pump_capacity']
+# xs = ['add_shared_water_heater.heat_pump_capacity']
+xs = ['add_shared_water_heater.loop_sp_boiler']
 colors = { 'c:/OpenStudio/get-resstock/proposed_scope_cap_cnt/results-Baseline.csv': ['add_shared_water_heater.heat_pump_count'],
            'c:/OpenStudio/get-resstock/proposed_scope_cap_vol/results-Baseline.csv': ['add_shared_water_heater.tank_volume_storage_heat_pump'],
-           'c:/OpenStudio/get-resstock/proposed_scope_cap_vol2/results-Baseline.csv': ['add_shared_water_heater.tank_volume_storage_heat_pump'] }[csv_file_path]
+           'c:/OpenStudio/get-resstock/proposed_scope_cap_vol2/results-Baseline.csv': ['add_shared_water_heater.tank_volume_storage_heat_pump'],
+           'c:/OpenStudio/get-resstock/proposed_scope_offset_vol/results-Baseline.csv': ['add_shared_water_heater.tank_volume_storage_heat_pump'] }[csv_file_path]
 ys = ['report_simulation_output.energy_use_total_m_btu',
       'report_simulation_output.fuel_use_electricity_total_m_btu',
       'report_simulation_output.fuel_use_natural_gas_total_m_btu']

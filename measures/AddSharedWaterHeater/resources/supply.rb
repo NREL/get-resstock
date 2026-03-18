@@ -15,10 +15,10 @@ class Supply
           space_heating_capacity_for_hp = space_heating_capacity * space_htg_load_frac # Portion of space heating load served by HPWH
         end
 
-        #puts("Water Heating Capacity: #{water_heating_capacity}")
-        #puts("Space Heating Capacity for HP: #{space_heating_capacity_for_hp}")
-        #puts("Heat Pump Capacity: #{heat_pump_capacity}")
-        #puts("space_htg_load_frac: #{space_htg_load_frac}")
+        # puts("Water Heating Capacity: #{water_heating_capacity}")
+        # puts("Space Heating Capacity for HP: #{space_heating_capacity_for_hp}")
+        # puts("Heat Pump Capacity: #{heat_pump_capacity}")
+        # puts("space_htg_load_frac: #{space_htg_load_frac}")
 
         heat_pump_count = ((water_heating_capacity + space_heating_capacity_for_hp) / heat_pump_capacity).ceil
       else
@@ -29,7 +29,7 @@ class Supply
         # heat_pump_count = [1, heat_pump_count].max # FIXME: min
         heat_pump_count = [(num_units / 20.0).ceil, 5].min
       end
-      #puts("heat_pump_count: #{heat_pump_count}")
+      # puts("heat_pump_count: #{heat_pump_count}")
     end
 
     return boiler_count, heat_pump_count
