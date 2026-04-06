@@ -89,7 +89,7 @@ class Supply
       component.setNominalCapacity(capacity)
       # component.setFuelType(EPlus.fuel_type(fuel_type))
       component.setFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
-      component.setMinimumPartLoadRatio(0.2)
+      component.setMinimumPartLoadRatio(0.0)
       component.setMaximumPartLoadRatio(1.0)
       component.setOptimumPartLoadRatio(1.0)
       component.setBoilerFlowMode('LeavingSetpointModulated')
@@ -171,7 +171,7 @@ class Supply
         hpwh.setCompressorLocation('Outdoors')
         hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
         hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
-        hpwh.setDeadBandTemperatureDifference(3) # C
+        hpwh.setDeadBandTemperatureDifference(5) # C
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
         # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)

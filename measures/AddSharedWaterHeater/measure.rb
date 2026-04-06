@@ -161,13 +161,14 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     space_heating_loop_sp_schedule = Setpoints.create_schedule(model, space_heating_loop_sp)
 
     # Add Loops
+    avm_schOff = nil
     dhw_loop = Loops.create_plant(model, 'DHW Loop', dhw_loop_des, 10.0, dhw_loop_gpm, num_units)
     boiler_loops = {}
     (1..boiler_count).to_a.each do |i|
       boiler_loop = Loops.create_plant(model, "Supply Boiler Loop #{i}", boiler_loop_des, 20.0, supply_loop_gpm)
 
-      # avm_schOff = OpenStudio::Model::AvailabilityManagerScheduledOff.new(model)
-      # boiler_loop.addAvailabilityManager(avm_schOff)
+      avm_schOff = OpenStudio::Model::AvailabilityManagerScheduledOff.new(model) # actuated later
+      boiler_loop.addAvailabilityManager(avm_schOff)
 
       boiler_loops[boiler_loop] = []
     end
@@ -264,6 +265,36 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
       components << storage_tank
       prev_component = components[0]
+    end
+
+    # Boiler Availability
+    if not avm_schOff.nil?
+      model.getCoilWaterHeatingAirToWaterHeatPumps.each do |coil|
+        sensor = OpenStudio::Model::EnergyManagementSystemSensor.new(model, 'Cooling Coil Water Heating Electricity Energy')
+        sensor.setName("#{coil.name} s")
+        sensor.setKeyName(coil.name.to_s)
+
+        sch = OpenStudio::Model::ScheduleConstant.new(model)
+        sch.setName('boiler loop avail')
+        avm_schOff.setSchedule(sch)
+
+        act = OpenStudio::Model::EnergyManagementSystemActuator.new(sch, *EPlus::EMSActuatorScheduleConstantValue)
+        act.setName("#{sch.name} act")
+
+        prg = OpenStudio::Model::EnergyManagementSystemProgram.new(model)
+        prg.setName("#{sch.name} program")
+        prg.addLine("Set c_sensor = #{sensor.name}")
+        prg.addLine("Set #{act.name} = 1") # always available...
+        prg.addLine("If (c_sensor == 0)")
+        prg.addLine("  Set #{act.name} = 0") # except when coil is not running
+        prg.addLine('EndIf')
+
+        pcm = OpenStudio::Model::EnergyManagementSystemProgramCallingManager.new(model)
+        pcm.setName("#{sch.name} program calling manager")
+        # pcm.setCallingPoint('BeginZoneTimestepAfterInitHeatBalance')
+        pcm.setCallingPoint('InsideHVACSystemIterationLoop')
+        pcm.addProgram(prg)
+      end
     end
 
     if !boiler_on_hp_outlet
