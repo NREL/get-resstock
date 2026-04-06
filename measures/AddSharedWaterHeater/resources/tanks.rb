@@ -82,7 +82,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.get_storage_tank(model, name, setpoint, fuel_type, volume)
+  def self.get_storage_tank(model, name, setpoint, fuel_type, volume, max_temp_limit)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -104,7 +104,7 @@ class Tanks
     volume = [0.0001, volume].max # FIXME: this will set 0.1893 m^3/s (50 gal) if we try to set 0 volume
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setTankHeight(h_tank)
-    # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME: set this to 90C?
+    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(max_temp_limit, 'F', 'C'))
     # storage_tank.setMaximumTemperatureLimit(99)
     storage_tank.setHeater1SetpointTemperatureSchedule(setpoint_schedule)
     storage_tank.setHeater1Capacity(capacity)
@@ -153,8 +153,8 @@ class Tanks
     return storage_tank
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_component, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
-    storage_tank = get_storage_tank(model, name, setpoint, fuel_type, volume)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_component, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true, max_temp_limit = 180)
+    storage_tank = get_storage_tank(model, name, setpoint, fuel_type, volume, max_temp_limit)
 
     Loops.add_component(storage_tank, prev_component, hp_in_series, boiler_on_hp_outlet, supply_side_loop, demand_side_loop)
 

@@ -89,8 +89,7 @@ class Supply
       component.setNominalCapacity(capacity)
       # component.setFuelType(EPlus.fuel_type(fuel_type))
       component.setFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
-      # component.setMinimumPartLoadRatio(0.0) # FIXME: default
-      component.setMinimumPartLoadRatio(0.2) # FIXME: hand calculation; this w/GAHP is pretty good, and you don't need AVM
+      component.setMinimumPartLoadRatio(0.2)
       component.setMaximumPartLoadRatio(1.0)
       component.setOptimumPartLoadRatio(1.0)
       component.setBoilerFlowMode('LeavingSetpointModulated')
@@ -149,6 +148,7 @@ class Supply
           coil.setHeatingCOPFunctionofTemperatureCurve(hpwh_cop)
           coil.setRatedEvaporatorAirFlowRate(0.18877898)
           coil.setFractionofCondenserPumpHeattoWater(0.00001)
+          # coil.setCondenserWaterPumpPower(0.0)
 
         elsif coil_type == 'lab' # Option 2: lab
           # FIXME: elsif lab data...
@@ -159,8 +159,8 @@ class Supply
         fan.additionalProperties.setFeature('ObjectType', Constants.ObjectNameWaterHeater) # Used by reporting measure
 
         compressorSetpointTemperatureSchedule = OpenStudio::Model::ScheduleConstant.new(model)
-        compressorSetpointTemperatureSchedule.setName("Compressor Temperature #{setpoint.round}F")
-        comp_setpoint = setpoint + 1
+        comp_setpoint = setpoint
+        compressorSetpointTemperatureSchedule.setName("Compressor Temperature #{comp_setpoint.round}F")
         compressorSetpointTemperatureSchedule.setValue(UnitConversions.convert(comp_setpoint, 'F', 'C'))
 
         inletAirMixerSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
@@ -171,8 +171,7 @@ class Supply
         hpwh.setCompressorLocation('Outdoors')
         hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
         hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
-        hpwh.setDeadBandTemperatureDifference(0.1) # C
-        # hpwh.setDeadBandTemperatureDifference(1.0) # C
+        hpwh.setDeadBandTemperatureDifference(3) # C
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
         # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)

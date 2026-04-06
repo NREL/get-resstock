@@ -165,6 +165,10 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
     boiler_loops = {}
     (1..boiler_count).to_a.each do |i|
       boiler_loop = Loops.create_plant(model, "Supply Boiler Loop #{i}", boiler_loop_des, 20.0, supply_loop_gpm)
+
+      # avm_schOff = OpenStudio::Model::AvailabilityManagerScheduledOff.new(model)
+      # boiler_loop.addAvailabilityManager(avm_schOff)
+
       boiler_loops[boiler_loop] = []
     end
     heat_pump_loops = {}
@@ -247,7 +251,7 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
 
     if heat_pump_loops.empty? # we only have HP loops when HP is gas-fired
       (1..heat_pump_count).to_a.each do |_i|
-        tank = Tanks.get_storage_tank(model, "#{storage_loop.name} Storage Tank", heat_pump_loop_sp, shared_water_heater_fuel_type, heat_pump_storage_tank_volume)
+        tank = Tanks.get_storage_tank(model, "#{storage_loop.name} Storage Tank", 120.0, shared_water_heater_fuel_type, heat_pump_storage_tank_volume, 180)
 
         component = Supply.create_component(model, shared_water_heater_type, shared_water_heater_fuel_type, storage_loop, heat_pump_capacity, shared_boiler_efficiency_afue, t_amb, num_units, coil_type, prev_component, heat_pump_loop_sp, true, true, tank)
         prev_component = component
