@@ -79,7 +79,7 @@ class Supply
     return boiler_capacity, heat_pump_capacity, water_heating_capacity, space_heating_capacity
   end
 
-  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, setpoint = nil, hp_in_series = true, boiler_on_hp_outlet = true, tank = nil)
+  def self.create_component(model, type, fuel_type, supply_side_loop, capacity, boiler_eff_afue, t_amb, num_units, coil_type, prev_component, setpoint = nil, hp_in_series = true, boiler_on_hp_outlet = true, tank = nil, deadband = nil, min_plr = nil)
     name = supply_side_loop.name
 
     if type.include?(Constant::Boiler)
@@ -89,7 +89,7 @@ class Supply
       component.setNominalCapacity(capacity)
       # component.setFuelType(EPlus.fuel_type(fuel_type))
       component.setFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
-      component.setMinimumPartLoadRatio(0.0)
+      component.setMinimumPartLoadRatio(min_plr)
       component.setMaximumPartLoadRatio(1.0)
       component.setOptimumPartLoadRatio(1.0)
       component.setBoilerFlowMode('LeavingSetpointModulated')
@@ -136,6 +136,7 @@ class Supply
 
           coil.setRatedEvaporatorAirFlowRate(0.75) # FIXME: sort of arbitarily increased from autosized value of 0.293 to get around negative coil bypass factor error.
           # coil.setRatedHeatingCapacity(5834)
+          # capacity *= 0.75
           coil.setRatedHeatingCapacity(capacity) # FIXME
           coil.setRatedCOP(3.26)
           coil.setRatedSensibleHeatRatio(0.98)
@@ -171,7 +172,7 @@ class Supply
         hpwh.setCompressorLocation('Outdoors')
         hpwh.setMinimumInletAirTemperatureforCompressorOperation(-23.33) # -10F
         hpwh.setMaximumInletAirTemperatureforCompressorOperation(48.89) # 120F
-        hpwh.setDeadBandTemperatureDifference(5) # C
+        hpwh.setDeadBandTemperatureDifference(deadband) # C
         # inletAirTemperatureSchedule = OpenStudio::Model::ScheduleRuleset.new(model)
         # inletAirTemperatureSchedule.defaultDaySchedule.addValue(OpenStudio::Time.new(0, 24, 0, 0), 19.7)
         # hpwh.setInletAirTemperatureSchedule(inletAirTemperatureSchedule)

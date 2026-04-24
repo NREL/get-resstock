@@ -288,8 +288,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
                'HPWH Capacity',
                'HPWH Count',
                'HPWH Tank Volume',
+               'HPWH Tank Setpoint',
+               'HPWH Deadband',
                'Boiler Tank Volume',
                'Boiler Loop Offset',
+               'Boiler Min PLR',
                'Description']
 
     if !extras.empty?
@@ -411,8 +414,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     hpwh_capacity = bldg_data['HPWH Capacity']
     hpwh_count = bldg_data['HPWH Count']
     hpwh_tank_volume = bldg_data['HPWH Tank Volume']
+    hpwh_tank_sp = bldg_data['HPWH Tank Setpoint']
+    hpwh_deadband = bldg_data['HPWH Deadband']
     boiler_tank_volume = bldg_data['Boiler Tank Volume']
     boiler_loop_offset = bldg_data['Boiler Loop Offset']
+    boiler_min_plr = bldg_data['Boiler Min PLR']
     description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
@@ -490,8 +496,11 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "hpwh_capacity=#{hpwh_capacity}" # Used by AddSharedWaterHeater measure
       additional_properties << "hpwh_count=#{hpwh_count}" # Used by AddSharedWaterHeater measure
       additional_properties << "hpwh_tank_volume=#{hpwh_tank_volume}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_tank_sp=#{hpwh_tank_sp}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_deadband=#{hpwh_deadband}" # Used by AddSharedWaterHeater measure
       additional_properties << "boiler_tank_volume=#{boiler_tank_volume}" # Used by AddSharedWaterHeater measure
       additional_properties << "boiler_loop_offset=#{boiler_loop_offset}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_min_plr=#{boiler_min_plr}" # Used by AddSharedWaterHeater measure
 
       register_value(runner, 'description', description) unless description.nil?
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
