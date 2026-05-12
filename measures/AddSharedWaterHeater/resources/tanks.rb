@@ -131,8 +131,8 @@ class Tanks
 
     # storage_tank.setSourceSideInletHeight(h_source_in)
     # storage_tank.setSourceSideInletHeight(h_source_out / 3.0) # FIXME: apply_solar_thermal
-    # storage_tank.setSourceSideInletHeight(h_source_out)
-    storage_tank.setSourceSideInletHeight(h_source_out / 2.0)
+    storage_tank.setSourceSideInletHeight(h_source_out)
+    # storage_tank.setSourceSideInletHeight(h_source_out / 2.0)
 
     storage_tank.setSourceSideOutletHeight(0) # FIXME: apply_solar_thermal
     # storage_tank.setSourceSideOutletHeight(h_source_out)

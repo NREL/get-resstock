@@ -1,6 +1,43 @@
 # frozen_string_literal: true
 
 class Setpoints
+  def self.apply_thermostat_deadband(model, onoff_thermostat_ddb)
+    year_start_date = OpenStudio::Date.new(OpenStudio::MonthOfYear.new('January'), 1, model.yearDescription.get.assumedYear)
+    year_end_date = OpenStudio::Date.new(OpenStudio::MonthOfYear.new('December'), 31, model.yearDescription.get.assumedYear)
+
+    model.getThermostatSetpointDualSetpoints.each do |thermostat_setpoint|
+      if thermostat_setpoint.heatingSetpointTemperatureSchedule.is_initialized
+        heating_sch = thermostat_setpoint.heatingSetpointTemperatureSchedule.get.to_ScheduleRuleset.get
+        day_schedules = heating_sch.getDaySchedules(year_start_date, year_end_date).uniq
+        day_schedules.each do |day_schedule|
+          times = day_schedule.times
+          values = day_schedule.values
+          day_schedule.clearValues
+          times.each_with_index do |time, i|
+            value = values[i] - UnitConversions.convert(onoff_thermostat_ddb, 'deltaF', 'deltaC') / 2.0
+            day_schedule.addValue(time, value)
+          end
+        end
+      end
+
+      if thermostat_setpoint.coolingSetpointTemperatureSchedule.is_initialized
+        cooling_sch = thermostat_setpoint.coolingSetpointTemperatureSchedule.get.to_ScheduleRuleset.get
+        day_schedules = cooling_sch.getDaySchedules(year_start_date, year_end_date).uniq
+        day_schedules.each do |day_schedule|
+          times = day_schedule.times
+          values = day_schedule.values
+          day_schedule.clearValues
+          times.each_with_index do |time, i|
+            value = values[i] + UnitConversions.convert(onoff_thermostat_ddb, 'deltaF', 'deltaC') / 2.0
+            day_schedule.addValue(time, value)
+          end
+        end
+      end
+
+      thermostat_setpoint.setTemperatureDifferenceBetweenCutoutAndSetpoint(UnitConversions.convert(onoff_thermostat_ddb, 'deltaF', 'deltaC'))
+    end
+  end
+
   def self.get_loop_designs(type)
     # deg-F
     dhw_loop_sp = 135.0

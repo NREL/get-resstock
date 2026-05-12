@@ -338,6 +338,9 @@ class AddSharedWaterHeater < OpenStudio::Measure::ModelMeasure
       components << component
     end
 
+    # Thermostat Deadband
+    Setpoints.apply_thermostat_deadband(model, deadband_heat_pump)
+
     # Re-connect WaterUseConections (in series) with PipeIndoors
     reconnected_water_heatings = Loops.reconnect_water_use_connections(model, dhw_loop)
 
