@@ -282,7 +282,19 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
 
     # Check buildstock.csv doesn't have extra parameters
     extras = bldg_data.keys - parameters_ordered - ['Building', 'sample_weight']
-    extras -= ['sample_weight_elec_iou', 'sample_weight_elec_non_iou', 'sample_weight_elec', 'sample_weight_gas', 'sample_weight_gas_iou', 'sample_weight_buildings']
+    extras -= ['Coil Type',
+               'Loops Setpoint',
+               'HPWH Fraction of Space Heating Load',
+               'HPWH Capacity',
+               'HPWH Count',
+               'HPWH Tank Volume',
+               'HPWH Tank Setpoint',
+               'HPWH Deadband',
+               'Boiler Tank Volume',
+               'Boiler Loop Offset',
+               'Boiler Min PLR',
+               'Description']
+
     if !extras.empty?
       runner.registerError("Mismatch between buildstock.csv and options_lookup.tsv. Extra parameters: #{extras.join(', ')}.")
       return false
@@ -353,29 +365,61 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       require_relative '../AddSharedWaterHeater/resources/constants.rb'
 
       water_heater_efficiency = bldg_data['Water Heater Efficiency']
+      hvac_shared_efficiencies = bldg_data['HVAC Shared Efficiencies']
+
       if water_heater_efficiency.include?('Natural Gas')
-        if water_heater_efficiency.include?('Natural Gas Heat Pump')
+        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
+        if water_heater_efficiency.include?('Heat Pump')
           shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
+          end
         else
           shared_water_heater_type = Constant::WaterHeaterTypeBoiler
+
+          if hvac_shared_efficiencies.include?('Heating') &&
+             water_heater_efficiency.include?('Combi')
+            shared_water_heater_type = Constant::WaterHeaterTypeCombiBoiler
+          end
         end
-        if water_heater_efficiency.include?('Standard')
-          shared_boiler_efficiency_afue = 0.8
-        elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
-          shared_boiler_efficiency_afue = 0.85
-        elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
-          shared_boiler_efficiency_afue = 0.9
+      elsif water_heater_efficiency.include?('Electric')
+        shared_water_heater_fuel_type = HPXML::FuelTypeElectricity
+        if water_heater_efficiency.include?('Heat Pump')
+          shared_water_heater_type = Constant::WaterHeaterTypeHeatPump
+        end
+
+        if hvac_shared_efficiencies.include?('Heating') &&
+           water_heater_efficiency.include?('Combi')
+          shared_water_heater_type = Constant::WaterHeaterTypeCombiHeatPump
         end
       end
 
-      if [Constant::WaterHeaterTypeBoiler, Constant::WaterHeaterTypeHeatPump, Constant::WaterHeaterTypeCombiBoiler, Constant::WaterHeaterTypeCombiHeatPump].include?(shared_water_heater_type)
-        shared_water_heater_fuel_type = HPXML::FuelTypeNaturalGas
+      if water_heater_efficiency.include?('Standard')
+        shared_boiler_efficiency_afue = 0.8
+      elsif water_heater_efficiency.end_with?('Premium') || water_heater_efficiency.end_with?('Tankless')
+        shared_boiler_efficiency_afue = 0.85
+      elsif water_heater_efficiency.end_with?('Premium, Condensing') || water_heater_efficiency.end_with?('Tankless, Condensing')
+        shared_boiler_efficiency_afue = 0.9
       end
     end
 
     geometry_num_floors_above_grade = bldg_data['Geometry Stories']
     geometry_corridor_position = bldg_data['Corridor']
     cec_climate_zone = bldg_data['CEC Climate Zone']
+    coil_type = bldg_data['Coil Type']
+    dhw_loop_sp = bldg_data['Loops Setpoint']
+    space_htg_load_frac = bldg_data['HPWH Fraction of Space Heating Load']
+    hpwh_capacity = bldg_data['HPWH Capacity']
+    hpwh_count = bldg_data['HPWH Count']
+    hpwh_tank_volume = bldg_data['HPWH Tank Volume']
+    hpwh_tank_sp = bldg_data['HPWH Tank Setpoint']
+    hpwh_deadband = bldg_data['HPWH Deadband']
+    boiler_tank_volume = bldg_data['Boiler Tank Volume']
+    boiler_loop_offset = bldg_data['Boiler Loop Offset']
+    boiler_min_plr = bldg_data['Boiler Min PLR']
+    description = bldg_data['Description']
 
     # Optional whole SFA/MF building simulation and unit multipliers
     whole_sfa_or_mf_building_sim = (shared_water_heater_type != 'none')
@@ -387,7 +431,8 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
     end
 
     num_units_modeled = 1
-    max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
+    # max_num_units_modeled = 10 # FIXME: 2 for testing, 10 for production?
+    max_num_units_modeled = 5
     unit_multipliers = []
     if use_unit_multipliers
       if whole_sfa_or_mf_building_sim && geometry_building_num_units > 1
@@ -445,6 +490,19 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       additional_properties << "shared_water_heater_fuel_type=#{shared_water_heater_fuel_type}" # Used by AddSharedWaterHeater measure
       additional_properties << "shared_boiler_efficiency_afue=#{shared_boiler_efficiency_afue}" # Used by AddSharedWaterHeater measure
       additional_properties << "cec_climate_zone=#{cec_climate_zone}" # Used by AddSharedWaterHeater measure
+      additional_properties << "coil_type=#{coil_type}" # Used by AddSharedWaterHeater measure
+      additional_properties << "dhw_loop_sp=#{dhw_loop_sp}" # Used by AddSharedWaterHeater measure
+      additional_properties << "space_htg_load_frac=#{space_htg_load_frac}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_capacity=#{hpwh_capacity}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_count=#{hpwh_count}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_tank_volume=#{hpwh_tank_volume}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_tank_sp=#{hpwh_tank_sp}" # Used by AddSharedWaterHeater measure
+      additional_properties << "hpwh_deadband=#{hpwh_deadband}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_tank_volume=#{boiler_tank_volume}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_loop_offset=#{boiler_loop_offset}" # Used by AddSharedWaterHeater measure
+      additional_properties << "boiler_min_plr=#{boiler_min_plr}" # Used by AddSharedWaterHeater measure
+
+      register_value(runner, 'description', description) unless description.nil?
       measures['BuildResidentialHPXML'][0]['additional_properties'] = additional_properties.join('|') unless additional_properties.empty?
 
       # Get software program used and version
@@ -789,7 +847,7 @@ class BuildExistingModel < OpenStudio::Measure::ModelMeasure
       # Get argument values and pass them to BuildResidentialScheduleFile
       measures['BuildResidentialScheduleFile'] = [{ 'hpxml_path' => hpxml_path,
                                                     'hpxml_output_path' => hpxml_path,
-                                                    'schedules_random_seed' => args[:building_id],
+                                                    # 'schedules_random_seed' => args[:building_id], # FIXME: comment this out so we generate the same stochastic schedules across rows of ProposedScope.csv?
                                                     'output_csv_path' => File.expand_path('../schedules.csv'),
                                                     'building_id' => 'ALL' }]
 

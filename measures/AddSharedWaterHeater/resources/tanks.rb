@@ -30,6 +30,13 @@ class Tanks
     end
   end
 
+  def self.min_tank_size_by_tmains(t_mains)
+    # Calc based on curve fit to CEC climate zone method
+    vol = 4.7429 * t_mains - 34.965
+    vol = [vol, 80].max # ensure reasonable minimum if super cold mains temp
+    return vol
+  end
+
   def self.get_boiler_storage_volume(num_units, num_occs)
     # gal
 
@@ -44,12 +51,12 @@ class Tanks
     return boiler_storage_tank_volume
   end
 
-  def self.get_heat_pump_storage_volume(type, cec_climate_zone)
+  def self.get_heat_pump_storage_volume(type, t_mains)
     # gal
 
     heat_pump_storage_tank_volume = 0.0
     if type.include?(Constant::HeatPumpWaterHeater)
-      heat_pump_storage_tank_volume = min_tank_size_by_cec_climate_zone(cec_climate_zone)
+      heat_pump_storage_tank_volume = min_tank_size_by_tmains(t_mains)
     end
 
     return heat_pump_storage_tank_volume
@@ -75,7 +82,7 @@ class Tanks
     return swing_tank_volume
   end
 
-  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_storage_tank, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
+  def self.get_storage_tank(model, name, setpoint, fuel_type, volume, max_temp_limit)
     h_tank = 2.0 # m, assumed
     h_source_in = 0.01 * h_tank
     h_source_out = 0.99 * h_tank
@@ -97,13 +104,14 @@ class Tanks
     volume = [0.0001, volume].max # FIXME: this will set 0.1893 m^3/s (50 gal) if we try to set 0 volume
     storage_tank.setTankVolume(UnitConversions.convert(volume, 'gal', 'm^3'))
     storage_tank.setTankHeight(h_tank)
-    # storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME: set this to 90C?
+    storage_tank.setMaximumTemperatureLimit(UnitConversions.convert(max_temp_limit, 'F', 'C'))
     # storage_tank.setMaximumTemperatureLimit(99)
     storage_tank.setHeater1SetpointTemperatureSchedule(setpoint_schedule)
     storage_tank.setHeater1Capacity(capacity)
     storage_tank.setHeater2SetpointTemperatureSchedule(setpoint_schedule)
     storage_tank.setHeater2Capacity(capacity)
     storage_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    # storage_tank.setHeaterFuelType(EPlus.fuel_type(HPXML::FuelTypeNaturalGas))
     storage_tank.setHeaterThermalEfficiency(1) # FIXME: apply_solar_thermal
 
     # amb = 40 # C
@@ -124,6 +132,8 @@ class Tanks
     # storage_tank.setSourceSideInletHeight(h_source_in)
     # storage_tank.setSourceSideInletHeight(h_source_out / 3.0) # FIXME: apply_solar_thermal
     storage_tank.setSourceSideInletHeight(h_source_out)
+    # storage_tank.setSourceSideInletHeight(h_source_out / 2.0)
+
     storage_tank.setSourceSideOutletHeight(0) # FIXME: apply_solar_thermal
     # storage_tank.setSourceSideOutletHeight(h_source_out)
 
@@ -132,36 +142,28 @@ class Tanks
 
     storage_tank.setOffCycleParasiticFuelConsumptionRate(0.0)
     storage_tank.setOnCycleParasiticFuelConsumptionRate(0.0)
-    storage_tank.setNumberofNodes(8) # FIXME: apply_solar_thermal
+    storage_tank.setNumberofNodes(12) # FIXME: apply_solar_thermal
+    storage_tank.setNode1AdditionalLossCoefficient(0.0) # These don't default to 0, I guess assuming a 6 node tank?
+    storage_tank.setNode6AdditionalLossCoefficient(0.0)
     storage_tank.setAdditionalDestratificationConductivity(0) # FIXME: apply_solar_thermal
     storage_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # storage_tank.setSourceSideDesignFlowRate(UnitConversions.convert(13.6, 'gal/min', 'm^3/s')) # FIXME
-    if demand_side_loop.nil? # stratified tank on supply side of source loop (e.g., shared electric hpwh)
-      storage_tank.setHeaterThermalEfficiency(1.0)
-      storage_tank.setAdditionalDestratificationConductivity(0)
-      storage_tank.setSourceSideDesignFlowRate(0)
-      storage_tank.setSourceSideFlowControlMode('')
-      storage_tank.setSourceSideInletHeight(0)
-      storage_tank.setSourceSideOutletHeight(0)
-    end
 
-    if prev_storage_tank.nil? || !hp_in_series
-      supply_side_loop.addSupplyBranchForComponent(storage_tank) # first one is a new supply branch
-    else
-      if boiler_on_hp_outlet
-        storage_tank.addToNode(prev_storage_tank.useSideOutletModelObject.get.to_Node.get) # remaining are added in series
-      else
-        storage_tank.addToNode(supply_side_loop.supplyOutletNode)
-      end
-    end
-    if !supply_side_loop.nil?
-      demand_side_loop.addDemandBranchForComponent(storage_tank)
-    end
+    # storage_tank.setSourceSideFlowControlMode('IndirectHeatAlternateSetpoint')
+    # storage_tank.setIndirectAlternateSetpointTemperatureSchedule(setpoint_schedule)
 
     return storage_tank
   end
 
-  def self.create_swing(model, demand_side_loop, supply_side_loop, volume, capacity, name, fuel_type, setpoint)
+  def self.create_storage(model, demand_side_loop, supply_side_loop, volume, prev_component, name, fuel_type, setpoint, hp_in_series = true, boiler_on_hp_outlet = true, max_temp_limit = 180)
+    storage_tank = get_storage_tank(model, name, setpoint, fuel_type, volume, max_temp_limit)
+
+    Loops.add_component(storage_tank, prev_component, hp_in_series, boiler_on_hp_outlet, supply_side_loop, demand_side_loop)
+
+    return storage_tank
+  end
+
+  def self.create_swing(model, supply_side_loop, volume, prev_hx, name, capacity, setpoint, hp_in_series = true, boiler_on_hp_outlet = true)
     return if volume == 0
 
     # this would be in series with the main storage tanks, downstream of it
@@ -198,14 +200,23 @@ class Tanks
     swing_tank.setOffCycleParasiticFuelConsumptionRate(0.0)
     swing_tank.setOnCycleParasiticFuelConsumptionRate(0.0)
     swing_tank.setNumberofNodes(6)
+    swing_tank.setNode1AdditionalLossCoefficient(0.0) # These don't default to 0, I guess assuming a 6 node tank?
+    swing_tank.setNode6AdditionalLossCoefficient(0.0)
     # swing_tank.setUseSideDesignFlowRate(UnitConversions.convert(volume, 'gal', 'm^3') / 60.1) # Sized to ensure that E+ never autosizes the design flow rate to be larger than the tank volume getting drawn out in a hour (60 minutes)
     # swing_tank.setSourceSideDesignFlowRate() # FIXME
     swing_tank.setEndUseSubcategory(name)
-    swing_tank.setHeaterFuelType(EPlus.fuel_type(fuel_type))
+    swing_tank.setHeaterFuelType(EPlus.fuel_type(HPXML::FuelTypeElectricity))
     swing_tank.setMaximumTemperatureLimit(UnitConversions.convert(setpoint, 'F', 'C')) # FIXME
 
-    supply_side_loop.addSupplyBranchForComponent(swing_tank)
-    demand_side_loop.addDemandBranchForComponent(swing_tank)
+    if prev_hx.nil? || !hp_in_series
+      supply_side_loop.addSupplyBranchForComponent(swing_tank) # first one is a new supply branch
+    else
+      if boiler_on_hp_outlet
+        swing_tank.addToNode(prev_hx.supplyOutletModelObject.get.to_Node.get) # remaining are added in series
+      else
+        swing_tank.addToNode(supply_side_loop.supplyOutletNode)
+      end
+    end
 
     return swing_tank
   end
